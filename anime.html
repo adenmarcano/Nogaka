@@ -143,6 +143,40 @@
             flex: 1;
         }
 
+        /* Random Button Styles */
+        .random-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: var(--dark-purple);
+            color: var(--text-lighter);
+            border: 2px solid var(--green);
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 25px 0;
+            transition: all 0.3s;
+        }
+
+        .random-btn:hover {
+            background: var(--green);
+            color: var(--dark-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(117, 164, 57, 0.4);
+        }
+
+        .random-message {
+            grid-column: 1/-1;
+            color: var(--green);
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(117, 164, 57, 0.1);
+            border-radius: 5px;
+            text-align: center;
+        }
+
         #animeContainer {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -226,6 +260,16 @@
 
         .watch-btn:hover {
             background: #126a82;
+        }
+
+        .no-trailer-btn {
+            background: #555;
+            color: white;
+            cursor: not-allowed;
+        }
+
+        .no-trailer-btn:hover {
+            background: #555 !important;
         }
 
         .fav-btn {
@@ -472,6 +516,15 @@
                         <option value="SCORE_DESC">Highest Rated</option>
                     </select>
                     
+                    <select id="typeFilter">
+                        <option value="ALL">All Types</option>
+                        <option value="TV">TV Series</option>
+                        <option value="MOVIE">Movies</option>
+                        <option value="OVA">OVAs</option>
+                        <option value="ONA">ONAs</option>
+                        <option value="SPECIAL">Specials</option>
+                    </select>
+                    
                     <button id="moodToggle">Enable Mood Search 💎</button> 
                 </div>
                 
@@ -482,6 +535,11 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Random Recommendations Button -->
+            <button id="random-btn" class="random-btn">
+                <i class="fas fa-random"></i> Get Random Recommendations
+            </button>
 
             <div id="animeContainer"></div>
             
@@ -519,6 +577,7 @@
         let filteredAnime = [];
         let moodSearchEnabled = false;
         let currentSort = 'START_DATE_DESC';
+        let currentType = 'ALL';
         let favorites = JSON.parse(localStorage.getItem('animeFavorites')) || [];
 
         // DOM Elements
@@ -527,6 +586,7 @@
         const loadMoreBtn = document.getElementById('loadMoreBtn');
         const searchBar = document.getElementById('searchBar');
         const sortOptions = document.getElementById('sortOptions');
+        const typeFilter = document.getElementById('typeFilter');
         const moodToggle = document.getElementById('moodToggle');
         const moodSearch = document.getElementById('moodSearch');
         const moodSlider = document.getElementById('moodSlider');
@@ -534,15 +594,16 @@
         const favoritesList = document.getElementById('favoritesList');
         const favoritesCount = document.getElementById('favoritesCount');
         const currentYear = document.getElementById('currentYear');
+        const randomBtn = document.getElementById('random-btn');
 
-        // GraphQL Query
+        // GraphQL Query for regular anime
         const GET_ANIME = `
-            query ($page: Int, $sort: [MediaSort]) {
+            query ($page: Int, $sort: [MediaSort], $type: MediaFormat) {
                 Page(page: $page, perPage: 20) {
                     pageInfo {
                         hasNextPage
                     }
-                    media(type: ANIME, sort: $sort) {
+                    media(type: ANIME, sort: $sort, format: $type) {
                         id
                         title {
                             romaji
@@ -560,6 +621,35 @@
                             site
                             id
                         }
+                        format
+                    }
+                }
+            }
+        `;
+
+        // GraphQL Query for random anime
+        const GET_RANDOM_ANIME = `
+            query ($page: Int) {
+                Page(page: $page, perPage: 12) {
+                    media(type: ANIME, sort: POPULARITY_DESC) {
+                        id
+                        title {
+                            romaji
+                            english
+                        }
+                        coverImage {
+                            large
+                        }
+                        description(asHtml: false)
+                        genres
+                        averageScore
+                        episodes
+                        status
+                        trailer {
+                            site
+                            id
+                        }
+                        format
                     }
                 }
             }
@@ -592,6 +682,13 @@
                 fetchAnime();
             });
             
+            // Type filter functionality
+            typeFilter.addEventListener('change', () => {
+                currentType = typeFilter.value;
+                currentPage = 1;
+                fetchAnime();
+            });
+            
             // Mood search toggle
             moodToggle.addEventListener('click', toggleMoodSearch);
             
@@ -601,12 +698,15 @@
             // Load more button
             loadMoreBtn.addEventListener('click', loadMoreAnime);
             
+            // Random recommendation button
+            randomBtn.addEventListener('click', fetchRandomAnime);
+            
             // Sign in/up buttons
-            document.querySelector('.btn-signin').addEventListener('click', () => {
+            document.querySelector('.btn-signin')?.addEventListener('click', () => {
                 alert('Sign in functionality would go here');
             });
             
-            document.querySelector('.btn-signup').addEventListener('click', () => {
+            document.querySelector('.btn-signup')?.addEventListener('click', () => {
                 alert('Sign up functionality would go here');
             });
         }
@@ -627,7 +727,8 @@
                         query: GET_ANIME,
                         variables: {
                             page: currentPage,
-                            sort: currentSort
+                            sort: currentSort,
+                            type: currentType === 'ALL' ? null : currentType
                         }
                     })
                 });
@@ -661,6 +762,64 @@
             }
         }
 
+        // Fetch random anime recommendations
+        async function fetchRandomAnime() {
+            loadingElement.style.display = 'block';
+            animeContainer.innerHTML = '';
+            
+            try {
+                // Get a random page to increase variety
+                const randomPage = Math.floor(Math.random() * 10) + 1;
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: GET_RANDOM_ANIME,
+                        variables: {
+                            page: randomPage
+                        }
+                    })
+                });
+                
+                const { data } = await response.json();
+                const randomAnime = data.Page.media;
+                
+                if (!randomAnime || randomAnime.length === 0) {
+                    throw new Error('No anime found matching criteria');
+                }
+                
+                // Display the random anime
+                filteredAnime = randomAnime;
+                renderAnime();
+                
+                // Add message about the random selection
+                animeContainer.insertAdjacentHTML('afterbegin', 
+                    `<div class="random-message">Showing 12 random anime we think you'll enjoy!</div>`);
+                
+                // Hide load more button for random results
+                loadMoreBtn.style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error fetching random anime:', error);
+                animeContainer.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Couldn't load random recommendations</p>
+                        <p><small>${error.message}</small></p>
+                        <button onclick="fetchRandomAnime()" class="retry-btn">
+                            <i class="fas fa-sync-alt"></i> Try Again
+                        </button>
+                    </div>
+                `;
+            } finally {
+                loadingElement.style.display = 'none';
+            }
+        }
+
         // Render anime to the DOM
         function renderAnime() {
             if (currentPage === 1) {
@@ -680,6 +839,7 @@
             
             filteredAnime.forEach(anime => {
                 const isFavorite = favorites.some(fav => fav.id === anime.id);
+                const hasTrailer = anime.trailer?.site === 'youtube';
                 
                 const animeCard = document.createElement('div');
                 animeCard.className = 'anime-card';
@@ -692,9 +852,9 @@
                         <h3 class="anime-title">${anime.title.romaji || anime.title.english}</h3>
                         
                         <div class="anime-meta">
-                            <span>${anime.episodes || '?'} eps</span>
+                            <span>${anime.episodes ? anime.episodes + ' eps' : '? eps'}</span>
                             <span class="anime-score">
-                                <i class="fas fa-star"></i> ${anime.averageScore || 'N/A'}
+                                <i class="fas fa-star"></i> ${anime.averageScore ? anime.averageScore : 'N/A'}
                             </span>
                         </div>
                         
@@ -705,8 +865,9 @@
                         </p>
                         
                         <div class="action-buttons">
-                            <button class="action-btn watch-btn">
-                                <i class="fas fa-play"></i> Watch Trailer
+                            <button class="action-btn ${hasTrailer ? 'watch-btn' : 'no-trailer-btn'}">
+                                <i class="fas fa-${hasTrailer ? 'play' : 'ban'}"></i> 
+                                ${hasTrailer ? 'Watch Trailer' : 'No Trailer'}
                             </button>
                             <button class="action-btn fav-btn ${isFavorite ? 'favorited' : ''}">
                                 <i class="${isFavorite ? 'fas' : 'far'} fa-heart"></i> 
@@ -717,16 +878,14 @@
                 `;
                 
                 // Add event listeners to buttons
-                const watchBtn = animeCard.querySelector('.watch-btn');
+                const watchBtn = animeCard.querySelector('.action-btn');
                 const favBtn = animeCard.querySelector('.fav-btn');
                 
-                watchBtn.addEventListener('click', () => {
-                    if (anime.trailer?.site === 'youtube') {
+                if (hasTrailer) {
+                    watchBtn.addEventListener('click', () => {
                         window.open(`https://youtube.com/watch?v=${anime.trailer.id}`, '_blank');
-                    } else {
-                        alert(`No trailer available for ${anime.title.romaji}`);
-                    }
-                });
+                    });
+                }
                 
                 favBtn.addEventListener('click', () => {
                     if (isFavorite) {
@@ -801,7 +960,8 @@
                     title: anime.title.romaji || anime.title.english,
                     image: anime.coverImage.large,
                     score: anime.averageScore,
-                    episodes: anime.episodes
+                    episodes: anime.episodes,
+                    format: anime.format
                 });
                 
                 saveFavorites();
@@ -847,6 +1007,7 @@
                         <div class="favorite-meta">
                             <span>${anime.episodes || '?'} eps</span>
                             <span><i class="fas fa-star"></i> ${anime.score || 'N/A'}</span>
+                            <span>${anime.format || ''}</span>
                         </div>
                     </div>
                     
