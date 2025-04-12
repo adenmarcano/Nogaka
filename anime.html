@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Explorer</title>
+    <title>Nogaka Anime | Best Anime Site</title>
     <style>
         :root {
             --green: #75A439;
@@ -22,6 +22,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             margin: 0;
+            padding: 0;
         }
 
         /* Header Section */
@@ -58,7 +59,7 @@
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.1);
-            margin: 20px 0;
+            margin: 20px;
             text-align: center;
         }
 
@@ -75,6 +76,7 @@
         button:hover {
             background: var(--green);
             color: var(--dark-blue);
+            cursor: pointer;
         }
 
         .slider-container {
@@ -90,9 +92,9 @@
 
         #animeContainer {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
-            margin: 20px 0;
+            margin: 20px;
         }
 
         .anime-card {
@@ -123,7 +125,8 @@
 
         .anime-image {
             width: 100%;
-            height: auto;
+            height: 300px;
+            object-fit: cover;
             border-radius: 8px;
             margin-bottom: 10px;
         }
@@ -132,15 +135,43 @@
             font-size: 1.2em;
             color: var(--text-gray);
             text-align: center;
+            margin: 20px;
+        }
+
+        #loadMoreBtn {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 25px;
+            background: var(--teal);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+
+        #loadMoreBtn:hover {
+            background: var(--green);
+        }
+
+        #loadMoreBtn:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            #animeContainer {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
         }
     </style>
 </head>
 <body>
-  
+    
   <div id="header-container"></div>
   <div id="footer-container"></div>
 
-  <script>
+    <script>
     // Load Header
     fetch('header.html')
       .then(response => response.text())
@@ -169,86 +200,115 @@
           `&copy; ${year} Nogaka. All rights reserved.`;
       }
     }
-  </script>
-  
+    </script>
+
     <div class="controls">
         <input type="text" id="searchBar" placeholder="Search anime..." oninput="filterBySearch()" />
-        <label for="sortOptions">Sort Anime:</label>
+        <label for="sortOptions">Sort By:</label>
         <select id="sortOptions" onchange="sortAnime()">
             <option value="START_DATE_DESC">Newest</option>
             <option value="POPULARITY_DESC">Popular</option>
+            <option value="SCORE_DESC">Highest Rated</option>
         </select>
         <button id="moodToggle" onclick="toggleMoodSearch()">Enable Mood Search</button>
         <div id="moodSearch" class="slider-container" style="display: none;">
             <span class="slider-label" id="sliderValue">Mood: Neutral</span>
+            <br>
             <input type="range" min="1" max="3" value="2" id="moodSlider" oninput="filterByMood()" />
         </div>
     </div>
-    <div id="loading">Loading...</div>
+
     <div id="animeContainer"></div>
+    <div id="loading">Loading...</div>
+    <button id="loadMoreBtn" onclick="loadMoreAnime()">Load More Anime</button>
 
     <script>
         const apiUrl = 'https://graphql.anilist.co';
+        let currentPage = 1;
+        let hasNextPage = true;
+        let animeData = [];
+        let filteredAnime = [];
+        let moodSearchEnabled = false;
+        let currentSort = 'START_DATE_DESC';
 
+        // GraphQL Query (Optimized for 200 anime per page)
         const graphqlQuery = `
-        query($sort: [MediaSort]) {
-            Page(page: 1, perPage: 50) {
+        query($page: Int, $sort: [MediaSort]) {
+            Page(page: $page, perPage: 200) {
+                pageInfo {
+                    hasNextPage
+                }
                 media(type: ANIME, sort: $sort) {
                     id
                     title {
                         romaji
+                        english
                     }
                     coverImage {
                         large
                     }
-                    description
+                    description(asHtml: false)
+                    genres
+                    averageScore
                     trailer {
                         site
                         id
                     }
-                    genres
                 }
             }
         }`;
 
-        let animeData = [];
-        let filteredAnime = [];
-        let moodSearchEnabled = false;
-
-        // Fetch anime based on sorting
-        function fetchAnime(sort = 'START_DATE_DESC') {
+        // Fetch anime with pagination
+        function fetchAnime(page = 1, sort = currentSort) {
             const loadingIndicator = document.getElementById('loading');
-            const animeContainer = document.getElementById('animeContainer');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
 
-            loadingIndicator.style.display = 'block'; // Show loading
-            animeContainer.innerHTML = ''; // Clear previous content
+            loadingIndicator.style.display = 'block';
+            loadMoreBtn.disabled = true;
 
             fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     query: graphqlQuery,
-                    variables: { sort },
+                    variables: { page, sort },
                 }),
             })
             .then(response => response.json())
             .then(data => {
-                animeData = data.data.Page.media;
-                filteredAnime = [...animeData]; // Clone data for filtering
-                loadingIndicator.style.display = 'none'; // Hide loading
+                const newAnime = data.data.Page.media;
+                hasNextPage = data.data.Page.pageInfo.hasNextPage;
+
+                if (page === 1) {
+                    animeData = newAnime;
+                } else {
+                    animeData = [...animeData, ...newAnime];
+                }
+
+                filteredAnime = [...animeData];
+                loadingIndicator.style.display = 'none';
+                loadMoreBtn.disabled = false;
                 displayAnime(filteredAnime);
+
+                if (!hasNextPage) {
+                    loadMoreBtn.style.display = 'none';
+                }
             })
             .catch(error => {
-                console.error('Error fetching anime data:', error);
-                loadingIndicator.style.display = 'none'; // Hide loading
-                animeContainer.innerHTML = '<p>Unable to fetch anime data!</p>';
+                console.error('Error fetching anime:', error);
+                loadingIndicator.textContent = 'Failed to load anime. Retrying...';
+                setTimeout(() => fetchAnime(page, sort), 3000); // Retry after 3s
             });
         }
 
         // Display anime cards
         function displayAnime(animeList) {
             const animeContainer = document.getElementById('animeContainer');
-            animeContainer.innerHTML = '';
+            
+            // Clear only on first load or search
+            if (currentPage === 1 || animeList.length < animeData.length) {
+                animeContainer.innerHTML = '';
+            }
 
             animeList.forEach(anime => {
                 const animeCard = document.createElement('div');
@@ -256,23 +316,23 @@
 
                 const animeImage = document.createElement('img');
                 animeImage.classList.add('anime-image');
-                animeImage.src = anime.coverImage.large;
-                animeImage.alt = `${anime.title.romaji} cover image`;
+                animeImage.src = anime.coverImage.large || 'https://via.placeholder.com/300x400';
+                animeImage.alt = anime.title.romaji;
 
                 const animeTitle = document.createElement('p');
                 animeTitle.classList.add('anime-title');
-                animeTitle.textContent = anime.title.romaji;
+                animeTitle.textContent = anime.title.romaji || anime.title.english;
 
                 const animeDescription = document.createElement('p');
                 animeDescription.classList.add('anime-description');
-                animeDescription.innerHTML = anime.description
-                    ? anime.description.substring(0, 100) + '...'
+                animeDescription.innerHTML = anime.description 
+                    ? anime.description.substring(0, 120) + '...' 
                     : 'No description available.';
 
-                // Navigate to YouTube trailer if available
+                // Add clickable trailer link
                 animeCard.onclick = () => {
-                    if (anime.trailer && anime.trailer.site === 'youtube') {
-                        window.open(`https://www.youtube.com/watch?v=${anime.trailer.id}`, '_blank');
+                    if (anime.trailer?.site === 'youtube') {
+                        window.open(`https://youtube.com/watch?v=${anime.trailer.id}`, '_blank');
                     }
                 };
 
@@ -283,64 +343,69 @@
             });
         }
 
-        // Search anime by title
+        // Search filter
         function filterBySearch() {
             const searchValue = document.getElementById('searchBar').value.toLowerCase();
-            const filtered = animeData.filter(anime =>
-                anime.title.romaji.toLowerCase().includes(searchValue)
+            filteredAnime = animeData.filter(anime =>
+                anime.title.romaji?.toLowerCase().includes(searchValue) ||
+                anime.title.english?.toLowerCase().includes(searchValue)
             );
-            displayAnime(filtered);
+            displayAnime(filteredAnime);
         }
 
-        // Filter anime by mood/genre
+        // Mood filter
         function filterByMood() {
-            if (!moodSearchEnabled) return; // Mood search disabled
+            if (!moodSearchEnabled) return;
 
             const moodValue = document.getElementById('moodSlider').value;
             const sliderValueLabel = document.getElementById('sliderValue');
 
-            const moods = { 
-                1: 'Sad (Slice of Life / Comedy)', 
-                2: 'Neutral (Mystery / Sci-Fi)', 
-                3: 'Excited (Action / Sports)' 
+            const moodGenres = {
+                1: ['Slice of Life', 'Drama', 'Comedy'], // Sad
+                2: ['Mystery', 'Sci-Fi', 'Psychological'], // Neutral
+                3: ['Action', 'Adventure', 'Sports'] // Excited
             };
-            sliderValueLabel.textContent = `Mood: ${moods[moodValue]}`;
 
-            const filtered = animeData.filter(anime => {
-                if (moodValue == 1) return anime.genres.some(genre =>
-                    ['Slice of Life', 'Healing', 'Drama', 'Comedy'].includes(genre)); // Sad mood
-                if (moodValue == 3) return anime.genres.some(genre =>
-                    ['Action', 'Sports', 'Adventure', 'Fantasy'].includes(genre)); // Excited mood
-                return anime.genres.some(genre =>
-                    ['Mystery', 'Psychological', 'Sci-Fi', 'Cyberpunk', 'Wholesome'].includes(genre)); // Neutral mood
-            });
+            sliderValueLabel.textContent = `Mood: ${
+                moodValue == 1 ? 'Burnt Out' : moodValue == 3 ? 'Excited' : 'Doh Care'
+            }`;
 
-            displayAnime(filtered);
+            filteredAnime = animeData.filter(anime => 
+                anime.genres.some(genre => moodGenres[moodValue].includes(genre))
+            );
+            displayAnime(filteredAnime);
         }
 
         // Toggle mood search
         function toggleMoodSearch() {
-            moodSearchEnabled = !moodSearchEnabled; // Toggle state
+            moodSearchEnabled = !moodSearchEnabled;
             const moodSearch = document.getElementById('moodSearch');
             const moodToggle = document.getElementById('moodToggle');
 
-            if (moodSearchEnabled) {
-                moodSearch.style.display = 'block';
-                moodToggle.textContent = 'Disable Mood Search';
-            } else {
-                moodSearch.style.display = 'none';
-                moodToggle.textContent = 'Enable Mood Search';
-                displayAnime(animeData); // Reset to full anime list
+            moodSearch.style.display = moodSearchEnabled ? 'block' : 'none';
+            moodToggle.textContent = moodSearchEnabled ? 'Disable Mood Search' : 'Enable Mood Search';
+
+            if (!moodSearchEnabled) {
+                filteredAnime = [...animeData];
+                displayAnime(filteredAnime);
             }
         }
 
-        // Sort anime by dropdown
+        // Sort anime
         function sortAnime() {
-            const sortOption = document.getElementById('sortOptions').value;
-            fetchAnime(sortOption);
+            currentSort = document.getElementById('sortOptions').value;
+            currentPage = 1;
+            fetchAnime(1, currentSort);
         }
 
-        // Initial Fetch
+        // Load more anime
+        function loadMoreAnime() {
+            if (!hasNextPage) return;
+            currentPage++;
+            fetchAnime(currentPage, currentSort);
+        }
+
+        // Initial load
         fetchAnime();
     </script>
 </body>
