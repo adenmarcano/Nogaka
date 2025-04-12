@@ -11,6 +11,13 @@
   <!-- Header Include -->
   <div id="header-container"></div>
 
+  <!-- Account Prompt (Only visible if user is not logged in) -->
+  <section id="account-prompt" class="hidden">
+    <p>Join Nogaka and dive into the world of anime & manga!</p>
+    <a href="signup.html" class="cta-button">Create an Account</a>
+    <a href="signin.html" class="cta-button">Sign In</a>
+  </section>
+
   <!-- Main Content -->
   <main class="container">
     <section class="hero">
@@ -41,7 +48,7 @@
   <!-- Footer Include -->
   <div id="footer-container"></div>
 
-  <!-- JavaScript to load header and footer -->
+  <!-- JavaScript to load header and footer, and manage login status -->
   <script>
     // Load Header
     fetch('header.html')
@@ -58,6 +65,16 @@
         document.getElementById('footer-container').innerHTML = data;
         initFooterScripts();
       });
+
+    // Check login status (This should be adapted to your actual authentication system)
+    function checkLoginStatus() {
+      const isLoggedIn = false; // Replace with actual logic
+      const accountPrompt = document.getElementById('account-prompt');
+
+      if (!isLoggedIn && accountPrompt) {
+        accountPrompt.classList.remove('hidden');
+      }
+    }
 
     // Header interactions
     function initHeaderScripts() {
@@ -79,6 +96,39 @@
           `&copy; ${year} Nogaka. All rights reserved.`;
       }
     }
+
+    // Run login check on page load
+    document.addEventListener('DOMContentLoaded', checkLoginStatus);
   </script>
+
+  <style>
+    /* Hide prompt by default */
+    .hidden {
+      display: none;
+    }
+
+    /* Account prompt styles */
+    #account-prompt {
+      text-align: center;
+      background-color: #f8f8f8;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 8px;
+    }
+
+    #account-prompt .cta-button {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px 20px;
+      background-color: #ff5733;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+
+    #account-prompt .cta-button:hover {
+      background-color: #ff2e00;
+    }
+  </style>
 </body>
 </html>
