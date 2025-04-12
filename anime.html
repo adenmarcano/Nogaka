@@ -60,6 +60,11 @@
             font-weight: bold;
             margin-bottom: 10px;
         }
+        .anime-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
         .anime-image {
             width: 100%;
             border-radius: 8px;
@@ -114,7 +119,12 @@
                     coverImage {
                         large
                     }
-                    averageScore
+                    description
+                    trailer {
+                        site
+                        id
+                    }
+                    genres
                 }
             }
         }`;
@@ -171,13 +181,22 @@
                 animeTitle.classList.add('anime-title');
                 animeTitle.textContent = anime.title.romaji;
 
-                // Navigate to Details Page
+                const animeDescription = document.createElement('p');
+                animeDescription.classList.add('anime-description');
+                animeDescription.innerHTML = anime.description
+                    ? anime.description.substring(0, 100) + '...'
+                    : 'No description available.';
+
+                // Navigate to YouTube trailer if available
                 animeCard.onclick = () => {
-                    window.location.href = `details.html?id=${anime.id}`;
+                    if (anime.trailer && anime.trailer.site === 'youtube') {
+                        window.open(`https://www.youtube.com/watch?v=${anime.trailer.id}`, '_blank');
+                    }
                 };
 
                 animeCard.appendChild(animeImage);
                 animeCard.appendChild(animeTitle);
+                animeCard.appendChild(animeDescription);
                 animeContainer.appendChild(animeCard);
             });
         }
@@ -191,20 +210,27 @@
             displayAnime(filtered);
         }
 
-        // Filter anime by mood
+        // Filter anime by mood/genre
         function filterByMood() {
             if (!moodSearchEnabled) return; // Mood search disabled
 
             const moodValue = document.getElementById('moodSlider').value;
             const sliderValueLabel = document.getElementById('sliderValue');
 
-            const moods = { 1: 'Sad', 2: 'Neutral', 3: 'Exciting' };
+            const moods = { 
+                1: 'Sad (Slice of Life / Comedy)', 
+                2: 'Neutral (Mystery / Sci-Fi)', 
+                3: 'Excited (Action / Sports)' 
+            };
             sliderValueLabel.textContent = `Mood: ${moods[moodValue]}`;
 
             const filtered = animeData.filter(anime => {
-                if (moodValue == 1) return anime.averageScore <= 50; // Sad
-                if (moodValue == 3) return anime.averageScore > 75;  // Exciting
-                return anime.averageScore > 50 && anime.averageScore <= 75; // Neutral
+                if (moodValue == 1) return anime.genres.some(genre =>
+                    ['Slice of Life', 'Healing', 'Drama', 'Comedy'].includes(genre)); // Sad mood
+                if (moodValue == 3) return anime.genres.some(genre =>
+                    ['Action', 'Sports', 'Adventure', 'Fantasy'].includes(genre)); // Excited mood
+                return anime.genres.some(genre =>
+                    ['Mystery', 'Psychological', 'Sci-Fi', 'Cyberpunk', 'Wholesome'].includes(genre)); // Neutral mood
             });
 
             displayAnime(filtered);
