@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nogaka - Dive Into Anime & Manga</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+  <!-- Header Include -->
+  <div id="header-container"></div>
+
+  <!-- Main Content -->
+  <main class="container">
+    <section class="hero">
+      <h1>Welcome to <span class="highlight">Nogaka</span></h1>
+      <p>Your ultimate portal to the anime & manga multiverse.</p>
+      <a href="explore.html" class="cta-button">Explore Now <i class="fas fa-arrow-right"></i></a>
+    </section>
+
+    <section class="features">
+      <div class="feature-card">
+        <i class="fas fa-fire"></i>
+        <h3>Trending Now</h3>
+        <p>See what's hot in the anime and manga scene—updated daily!</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-heart"></i>
+        <h3>Personalized Picks</h3>
+        <p>Get manga and anime suggestions based on your current vibe.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-users"></i>
+        <h3>Community Driven</h3>
+        <p>Join discussions, drop reviews, and share your favorite moments.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Include -->
+  <div id="footer-container"></div>
+
+  <!-- JavaScript to load header and footer -->
+  <script>
+    // Load Header
+    fetch('header.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('header-container').innerHTML = data;
+        initHeaderScripts();
+      });
+
+    // Load Footer
+    fetch('footer.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('footer-container').innerHTML = data;
+        initFooterScripts();
+      });
+
+    // Header interactions
+    function initHeaderScripts() {
+      document.querySelector('.btn-signin')?.addEventListener('click', () => {
+        alert('Redirecting to Sign In');
+      });
+      document.querySelector('.btn-signup')?.addEventListener('click', () => {
+        alert('Redirecting to Sign Up');
+      });
+    }
+
+    // Footer interactions
+    function initFooterScripts() {
+      const copyright =
+        document.querySelector('.footer-bottom p');
+      if (copyright) {
+        const year = new Date().getFullYear();
+        copyright.innerHTML = 
+          `&copy; ${year} Nogaka. All rights reserved.`;
+      }
+    }
+  </script>
+</body>
+</html>
