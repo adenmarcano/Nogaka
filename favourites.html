@@ -1,0 +1,97 @@
+<!-- Inside the <body> tag -->
+
+<!-- Header Include -->
+<div id="header-container"></div>
+
+<!-- Favorites Section -->
+<main class="container" style="background-color: #18203D; padding: 20px;">
+  <section class="favorites-section" style="text-align: center; padding: 40px;">
+    <h1><span class="highlight" style="color: #75A439;">Community Favorites</span></h1>
+    <p>See the top Anime & Manga loved by Nogaka users!</p>
+
+    <div id="favorites-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 40px;">
+      <!-- Cards injected here -->
+    </div>
+  </section>
+</main>
+
+<!-- Footer Include -->
+<div id="footer-container"></div>
+
+<script>
+  // Load Header
+  fetch('header.html')
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById('header-container').innerHTML = data;
+      initHeaderScripts();
+    });
+
+  // Load Footer
+  fetch('footer.html')
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById('footer-container').innerHTML = data;
+      initFooterScripts();
+    });
+
+  // Load Favorites using Jikan API
+  async function loadFavorites() {
+    const animeURL = 'https://api.jikan.moe/v4/top/anime?limit=6';
+    const mangaURL = 'https://api.jikan.moe/v4/top/manga?limit=6';
+    const container = document.getElementById('favorites-container');
+
+    try {
+      const [animeRes, mangaRes] = await Promise.all([
+        fetch(animeURL),
+        fetch(mangaURL)
+      ]);
+      const animeData = await animeRes.json();
+      const mangaData = await mangaRes.json();
+
+      const favorites = [...animeData.data, ...mangaData.data];
+
+      favorites.forEach(item => {
+        const card = document.createElement('div');
+        card.style.backgroundColor = '#301934';
+        card.style.borderRadius = '10px';
+        card.style.padding = '15px';
+        card.style.color = '#fff';
+        card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+        card.innerHTML = `
+          <img src="${item.images.jpg.image_url}" alt="${item.title}" style="width:100%; border-radius: 10px;">
+          <h3 style="margin: 10px 0; color: #75A439;">${item.title}</h3>
+          <p style="font-size: 14px;">Type: ${item.type}</p>
+          <button class="like-button" style="margin-top: 10px;">Like <span class="like-count">0</span></button>
+        `;
+
+        const likeBtn = card.querySelector('.like-button');
+        const likeCount = card.querySelector('.like-count');
+        let likes = 0;
+
+        likeBtn.addEventListener('click', () => {
+          likes++;
+          likeCount.textContent = likes;
+          likeBtn.style.backgroundColor = '#177E9D';
+        });
+
+        container.appendChild(card);
+      });
+    } catch (error) {
+      container.innerHTML = `<p style="color: red;">Failed to load community favorites. Please try again later.</p>`;
+      console.error("Error loading favorites:", error);
+    }
+  }
+
+  function initFooterScripts() {
+    const copyright = document.querySelector('.footer-bottom p');
+    if (copyright) {
+      const year = new Date().getFullYear();
+      copyright.innerHTML = `&copy; ${year} Nogaka. All rights reserved.`;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadFavorites();
+  });
+</script>
