@@ -1,0 +1,173 @@
+<body style="background-color: #000000; color: #fff; font-family: 'Segoe UI', sans-serif;">
+    <!-- Header Include -->
+    <div id="header-container"></div>
+  
+    <!-- Promo Banner -->
+    <div style="background-color: #167D9D; padding: 10px 0; text-align: center; font-weight: bold; color: white;">
+      🎁 Spin now for a chance to win a **7-Day Premium Pass** – Daily bonus spins unlocked for logged-in users!
+    </div>
+  
+    <!-- Main Content -->
+    <main class="container" style="background-color: #18203D; padding: 40px; text-align: center;">
+      <!-- Logged-in Welcome Message -->
+      <div style="margin-bottom: 30px;">
+        <h2>Welcome back, <span style="color: #75A439;">Aden</span> 👋</h2>
+        <p>Here’s your daily spin. Don’t forget to check your rewards and drop a comment!</p>
+      </div>
+  
+      <!-- Wheel & Navigation Section -->
+      <section class="wheel-section" style="display: flex; justify-content: center; gap: 40px; align-items: center; flex-wrap: wrap;">
+        <!-- Wheel and Spin Button -->
+        <div>
+          <h1 style="color: #75A439;">Spin the Wheel & Win Premium Membership!</h1>
+          <p style="margin-bottom: 20px;">Every spin wins – Try your luck!</p>
+  
+          <div id="wheel-container" style="margin: 0 auto; width: 300px; height: 300px; position: relative;">
+            <div id="wheel" style="
+              width: 100%;
+              height: 100%;
+              border-radius: 50%;
+              border: 8px solid #75A439;
+              background: conic-gradient(#167D9D 0% 25%, #177E9D 25% 50%, #301934 50% 75%, #18203D 75% 100%);
+              transition: transform 4s cubic-bezier(0.25, 1.5, 0.5, 1);
+            "></div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; font-weight: bold; color: #fff; font-size: 24px;">🎉</div>
+            <div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+              width: 0; height: 0;
+              border-left: 15px solid transparent;
+              border-right: 15px solid transparent;
+              border-bottom: 20px solid #75A439;
+              z-index: 20;"></div>
+          </div>
+  
+          <button id="spin-btn" style="
+            margin-top: 30px;
+            padding: 12px 24px;
+            background-color: #75A439;
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+          ">Spin Now!</button>
+  
+          <div id="result-message" style="margin-top: 30px; font-size: 20px; color: #fff; display: none;">
+            🎊 Congratulations! You've won <span style="color: #75A439;">Premium Membership</span>! 🎊
+          </div>
+        </div>
+  
+        <!-- Side Buttons -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <a href="manga.html" style="
+            padding: 12px 20px;
+            background-color: #167D9D;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+          " onmouseover="this.style.backgroundColor='#135e7a'" onmouseout="this.style.backgroundColor='#167D9D'">
+            ← Back to Manga
+          </a>
+          <a href="anime.html" style="
+            padding: 12px 20px;
+            background-color: #167D9D;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+          " onmouseover="this.style.backgroundColor='#135e7a'" onmouseout="this.style.backgroundColor='#167D9D'">
+            ← Back to Anime
+          </a>
+        </div>
+      </section>
+  
+      <!-- Saved Rewards Section -->
+      <section style="margin-top: 60px; text-align: left;">
+        <h3 style="color: #75A439;">🎁 Your Recent Rewards</h3>
+        <ul style="list-style: none; padding-left: 0; margin-top: 10px;">
+          <li>✅ 7-Day Premium – <span style="color: #167D9D;">April 12, 2025</span></li>
+          <li>✅ 3-Day Trial – April 11, 2025</li>
+          <li>✅ Bonus Wallpaper Pack – April 10, 2025</li>
+        </ul>
+      </section>
+  
+      <!-- Comment Section -->
+      <section style="margin-top: 60px; text-align: left;">
+        <h3 style="color: #75A439;">💬 User Comments</h3>
+        <div style="margin-top: 10px;">
+          <p><strong style="color: #167D9D;">@YukiChan</strong>: Just got a free trial! This is awesome 😍</p>
+          <p><strong style="color: #167D9D;">@ShadowKiller</strong>: Can’t believe I won premium on my first spin!</p>
+        </div>
+        <textarea placeholder="Leave a comment..." style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 8px; border: none; background-color: #301934; color: #fff;"></textarea>
+        <button style="
+          margin-top: 10px;
+          padding: 8px 16px;
+          background-color: #167D9D;
+          border: none;
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+        ">Post Comment</button>
+      </section>
+    </main>
+  
+    <!-- Footer Include -->
+    <div id="footer-container"></div>
+  
+    <!-- JavaScript (same as before) -->
+    <script>
+      // Load Header
+      fetch('header.html')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('header-container').innerHTML = data;
+          initHeaderScripts();
+        });
+  
+      // Load Footer
+      fetch('footer.html')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('footer-container').innerHTML = data;
+          initFooterScripts();
+        });
+  
+      const spinBtn = document.getElementById('spin-btn');
+      const wheel = document.getElementById('wheel');
+      const resultMessage = document.getElementById('result-message');
+      let spinning = false;
+  
+      spinBtn.addEventListener('click', () => {
+        if (spinning) return;
+        spinning = true;
+        const extraSpins = 360 * (5 + Math.floor(Math.random() * 3));
+        const offset = Math.floor(Math.random() * 360);
+        const totalRotation = extraSpins + offset;
+        wheel.style.transition = 'transform 4s cubic-bezier(0.25, 1.5, 0.5, 1)';
+        wheel.style.transform = `rotate(${totalRotation}deg)`;
+        resultMessage.style.display = 'none';
+  
+        setTimeout(() => {
+          resultMessage.style.display = 'block';
+          spinning = false;
+        }, 4200);
+      });
+  
+      function initFooterScripts() {
+        const copyright =
+          document.querySelector('.footer-bottom p') ||
+          document.querySelector('#footer-container p');
+        if (copyright) {
+          const year = new Date().getFullYear();
+          copyright.innerHTML = `&copy; ${year} Nogaka. All rights reserved.`;
+        }
+      }
+  
+      function initHeaderScripts() {
+        // Optional header logic
+      }
+    </script>
+  </body>
+  
