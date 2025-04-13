@@ -222,6 +222,18 @@
             margin-bottom: 10px;
             font-size: 0.9em;
             color: var(--text-gray);
+            gap: 8px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .meta-item i {
+            font-size: 0.9em;
+            color: var(--teal);
         }
 
         .anime-score {
@@ -284,6 +296,15 @@
 
         .fav-btn:hover {
             background: var(--green);
+        }
+
+        .details-btn {
+            background: var(--dark-purple);
+            color: white;
+        }
+
+        .details-btn:hover {
+            background: #402948;
         }
 
         #loading {
@@ -467,6 +488,10 @@
                 flex-wrap: wrap;
                 justify-content: center;
             }
+
+            .action-buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -511,18 +536,18 @@
                 
                 <div class="filter-row">
                     <select id="sortOptions">
-                        <option value="START_DATE_DESC">Newest</option>
-                        <option value="POPULARITY_DESC">Popular</option>
-                        <option value="SCORE_DESC">Highest Rated</option>
+                        <option value="bypopularity">Popular</option>
+                        <option value="airing">Airing</option>
+                        <option value="upcoming">Upcoming</option>
                     </select>
                     
                     <select id="typeFilter">
-                        <option value="ALL">All Types</option>
-                        <option value="TV">TV Series</option>
-                        <option value="MOVIE">Movies</option>
-                        <option value="OVA">OVAs</option>
-                        <option value="ONA">ONAs</option>
-                        <option value="SPECIAL">Specials</option>
+                        <option value="all">All Types</option>
+                        <option value="tv">TV Series</option>
+                        <option value="movie">Movies</option>
+                        <option value="ova">OVAs</option>
+                        <option value="ona">ONAs</option>
+                        <option value="special">Specials</option>
                     </select>
                     
                     <button id="moodToggle">Enable Mood Search 💎</button> 
@@ -569,15 +594,15 @@
     </footer>
 
     <script>
-        // API Configuration
-        const API_URL = 'https://graphql.anilist.co';
+        // API Configuration - Using Jikan API (MyAnimeList)
+        const API_URL = 'https://api.jikan.moe/v4';
         let currentPage = 1;
         let hasNextPage = true;
         let animeData = [];
         let filteredAnime = [];
         let moodSearchEnabled = false;
-        let currentSort = 'START_DATE_DESC';
-        let currentType = 'ALL';
+        let currentSort = 'bypopularity';
+        let currentType = 'all';
         let favorites = JSON.parse(localStorage.getItem('animeFavorites')) || [];
 
         // DOM Elements
@@ -595,65 +620,6 @@
         const favoritesCount = document.getElementById('favoritesCount');
         const currentYear = document.getElementById('currentYear');
         const randomBtn = document.getElementById('random-btn');
-
-        // GraphQL Query for regular anime
-        const GET_ANIME = `
-            query ($page: Int, $sort: [MediaSort], $type: MediaFormat) {
-                Page(page: $page, perPage: 20) {
-                    pageInfo {
-                        hasNextPage
-                    }
-                    media(type: ANIME, sort: $sort, format: $type) {
-                        id
-                        title {
-                            romaji
-                            english
-                        }
-                        coverImage {
-                            large
-                        }
-                        description(asHtml: false)
-                        genres
-                        averageScore
-                        episodes
-                        status
-                        trailer {
-                            site
-                            id
-                        }
-                        format
-                    }
-                }
-            }
-        `;
-
-        // GraphQL Query for random anime
-        const GET_RANDOM_ANIME = `
-            query ($page: Int) {
-                Page(page: $page, perPage: 12) {
-                    media(type: ANIME, sort: POPULARITY_DESC) {
-                        id
-                        title {
-                            romaji
-                            english
-                        }
-                        coverImage {
-                            large
-                        }
-                        description(asHtml: false)
-                        genres
-                        averageScore
-                        episodes
-                        status
-                        trailer {
-                            site
-                            id
-                        }
-                        format
-                    }
-                }
-            }
-        `;
 
         // Initialize the application
         function init() {
@@ -711,31 +677,24 @@
             });
         }
 
-        // Fetch anime data from AniList API
+        // Fetch anime data from Jikan API
         async function fetchAnime() {
             loadingElement.style.display = 'block';
             loadMoreBtn.disabled = true;
             
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        query: GET_ANIME,
-                        variables: {
-                            page: currentPage,
-                            sort: currentSort,
-                            type: currentType === 'ALL' ? null : currentType
-                        }
-                    })
-                });
+                let url;
+                if (searchBar.value.trim() === '') {
+                    url = `${API_URL}/top/anime?page=${currentPage}&filter=${currentSort}&type=${currentType === 'all' ? '' : currentType}`;
+                } else {
+                    url = `${API_URL}/anime?q=${encodeURIComponent(searchBar.value)}&page=${currentPage}&order_by=${currentSort}&type=${currentType === 'all' ? '' : currentType}`;
+                }
                 
-                const { data } = await response.json();
-                const newAnime = data.Page.media;
-                hasNextPage = data.Page.pageInfo.hasNextPage;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const newAnime = data.data || [];
+                hasNextPage = data.pagination?.has_next_page || false;
                 
                 if (currentPage === 1) {
                     animeData = newAnime;
@@ -770,30 +729,16 @@
             try {
                 // Get a random page to increase variety
                 const randomPage = Math.floor(Math.random() * 10) + 1;
-                
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        query: GET_RANDOM_ANIME,
-                        variables: {
-                            page: randomPage
-                        }
-                    })
-                });
-                
-                const { data } = await response.json();
-                const randomAnime = data.Page.media;
+                const response = await fetch(`${API_URL}/top/anime?page=${randomPage}`);
+                const data = await response.json();
+                const randomAnime = data.data || [];
                 
                 if (!randomAnime || randomAnime.length === 0) {
                     throw new Error('No anime found matching criteria');
                 }
                 
                 // Display the random anime
-                filteredAnime = randomAnime;
+                filteredAnime = randomAnime.slice(0, 12); // Show 12 random anime
                 renderAnime();
                 
                 // Add message about the random selection
@@ -838,29 +783,42 @@
             }
             
             filteredAnime.forEach(anime => {
-                const isFavorite = favorites.some(fav => fav.id === anime.id);
-                const hasTrailer = anime.trailer?.site === 'youtube';
+                const isFavorite = favorites.some(fav => fav.id === anime.mal_id);
+                const hasTrailer = anime.trailer?.url;
+                
+                // Format data for display
+                const scoreDisplay = anime.score ? anime.score.toFixed(1) + '/10' : 'N/A';
+                const episodesDisplay = anime.episodes ? `${anime.episodes} eps` : '? eps';
+                const formatDisplay = anime.type || 'Unknown';
                 
                 const animeCard = document.createElement('div');
                 animeCard.className = 'anime-card';
                 animeCard.innerHTML = `
-                    <img src="${anime.coverImage.large || 'https://via.placeholder.com/300x400'}" 
-                         alt="${anime.title.romaji}" 
+                    <img src="${anime.images?.jpg?.large_image_url || 'https://via.placeholder.com/300x400'}" 
+                         alt="${anime.title}" 
                          class="anime-image">
                     
                     <div class="anime-info">
-                        <h3 class="anime-title">${anime.title.romaji || anime.title.english}</h3>
+                        <h3 class="anime-title">${anime.title || 'No title available'}</h3>
                         
                         <div class="anime-meta">
-                            <span>${anime.episodes ? anime.episodes + ' eps' : '? eps'}</span>
-                            <span class="anime-score">
-                                <i class="fas fa-star"></i> ${anime.averageScore ? anime.averageScore : 'N/A'}
-                            </span>
+                            <div class="meta-item">
+                                <i class="fas fa-film"></i>
+                                <span>${formatDisplay}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-list-ol"></i>
+                                <span>${episodesDisplay}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-star"></i>
+                                <span class="anime-score">${scoreDisplay}</span>
+                            </div>
                         </div>
                         
                         <p class="anime-description">
-                            ${anime.description ? 
-                                anime.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : 
+                            ${anime.synopsis ? 
+                                anime.synopsis.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : 
                                 'No description available.'}
                         </p>
                         
@@ -878,22 +836,24 @@
                 `;
                 
                 // Add event listeners to buttons
-                const watchBtn = animeCard.querySelector('.action-btn');
+                const watchBtn = animeCard.querySelector('.watch-btn');
                 const favBtn = animeCard.querySelector('.fav-btn');
                 
-                if (hasTrailer) {
+                if (hasTrailer && watchBtn) {
                     watchBtn.addEventListener('click', () => {
-                        window.open(`https://youtube.com/watch?v=${anime.trailer.id}`, '_blank');
+                        window.open(anime.trailer.url, '_blank');
                     });
                 }
                 
-                favBtn.addEventListener('click', () => {
-                    if (isFavorite) {
-                        removeFromFavorites(anime.id);
-                    } else {
-                        addToFavorites(anime);
-                    }
-                });
+                if (favBtn) {
+                    favBtn.addEventListener('click', () => {
+                        if (isFavorite) {
+                            removeFromFavorites(anime.mal_id);
+                        } else {
+                            addToFavorites(anime);
+                        }
+                    });
+                }
                 
                 animeContainer.appendChild(animeCard);
             });
@@ -907,8 +867,7 @@
                 filteredAnime = [...animeData];
             } else {
                 filteredAnime = animeData.filter(anime => 
-                    (anime.title.romaji?.toLowerCase().includes(searchTerm) || 
-                     anime.title.english?.toLowerCase().includes(searchTerm))
+                    anime.title?.toLowerCase().includes(searchTerm)
                 );
             }
             
@@ -939,7 +898,8 @@
             
             sliderValue.textContent = `Mood: ${moods[moodValue].name}`;
             filteredAnime = animeData.filter(anime => 
-                anime.genres.some(genre => moods[moodValue].genres.includes(genre))
+                anime.genres?.some(genre => moods[moodValue].genres.includes(genre.name)) ||
+                anime.themes?.some(theme => moods[moodValue].genres.includes(theme.name))
             );
             
             renderAnime();
@@ -954,14 +914,14 @@
 
         // Add anime to favorites
         function addToFavorites(anime) {
-            if (!favorites.some(fav => fav.id === anime.id)) {
+            if (!favorites.some(fav => fav.id === anime.mal_id)) {
                 favorites.push({
-                    id: anime.id,
-                    title: anime.title.romaji || anime.title.english,
-                    image: anime.coverImage.large,
-                    score: anime.averageScore,
+                    id: anime.mal_id,
+                    title: anime.title,
+                    image: anime.images?.jpg?.large_image_url,
+                    score: anime.score,
                     episodes: anime.episodes,
-                    format: anime.format
+                    type: anime.type
                 });
                 
                 saveFavorites();
@@ -1007,7 +967,7 @@
                         <div class="favorite-meta">
                             <span>${anime.episodes || '?'} eps</span>
                             <span><i class="fas fa-star"></i> ${anime.score || 'N/A'}</span>
-                            <span>${anime.format || ''}</span>
+                            <span>${anime.type || ''}</span>
                         </div>
                     </div>
                     
