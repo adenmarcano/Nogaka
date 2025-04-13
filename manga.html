@@ -28,8 +28,13 @@
 
     body {
       background-color: var(--bg-dark);
-      color: var(--text-light);
-      line-height: 1.6;
+            color: var(--text-light);
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(117, 164, 57, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(22, 125, 157, 0.15) 0%, transparent 50%),
+                linear-gradient(135deg, #121212 0%, #1a1a2e 100%);
+            background-attachment: fixed;
       min-height: 100vh; 
     }
 
@@ -144,22 +149,24 @@
       display: block;
       width: 100%;
       padding: 15px;
-      background: var(--dark-purple);
+      background: linear-gradient(90deg, rgba(48, 25, 52, 0.8) 0%, rgba(22, 125, 157, 0.5) 100%);
       color: var(--text-lighter);
       border: 2px solid var(--green);
       border-radius: 6px;
-      font-size: 18px;
+      font-size: 1.1em;
       font-weight: bold;
       cursor: pointer;
       margin: 25px 0;
       transition: all 0.3s;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
 
     .random-btn:hover {
       background: var(--green);
       color: var(--dark-blue);
       transform: translateY(-3px);
-      box-shadow: 0 4px 15px rgba(117, 164, 57, 0.4);
+      box-shadow: 0 8px 25px rgba(117, 164, 57, 0.4);
     }
 
     /* Manga Grid */
