@@ -15,6 +15,8 @@
             --text-lighter: #FFFFFF;
             --text-gray: #B0B0B0;
             --bg-dark: #121212;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-highlight: rgba(255, 255, 255, 0.05);
         }
 
         * {
@@ -28,21 +30,42 @@
             background-color: var(--bg-dark);
             color: var(--text-light);
             line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(117, 164, 57, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(22, 125, 157, 0.15) 0%, transparent 50%),
+                linear-gradient(135deg, #121212 0%, #1a1a2e 100%);
+            background-attachment: fixed;
         }
 
         .header {
-            background-color: var(--dark-purple);
+            background-color: rgba(48, 25, 52, 0.8);
             padding: 20px;
             border-bottom: 3px solid var(--teal);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, rgba(48, 25, 52, 0.9) 0%, rgba(22, 125, 157, 0.3) 100%);
+            z-index: -1;
         }
 
         .header .logo {
             font-size: 2em;
             font-weight: bold;
             color: var(--green);
+            text-shadow: 0 0 10px rgba(117, 164, 57, 0.5);
         }
 
         .header nav a {
@@ -50,11 +73,28 @@
             text-decoration: none;
             margin: 0 15px;
             font-size: 1.1em;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
         .header nav a:hover {
             color: var(--green);
+            text-shadow: 0 0 8px rgba(117, 164, 57, 0.7);
+        }
+
+        .header nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--green);
+            transition: width 0.3s ease;
+        }
+
+        .header nav a:hover::after {
+            width: 100%;
         }
 
         .main-container {
@@ -79,12 +119,16 @@
         }
 
         .controls {
-            background: var(--dark-purple);
+            background: rgba(48, 25, 52, 0.7);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             margin-bottom: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-top: 1px solid var(--glass-highlight);
+            border-left: 1px solid var(--glass-highlight);
         }
 
         #searchBar {
@@ -98,11 +142,13 @@
             outline: none;
             transition: all 0.3s ease;
             margin-bottom: 15px;
+            backdrop-filter: blur(5px);
         }
 
         #searchBar:focus {
             border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(117, 164, 57, 0.3);
+            box-shadow: 0 0 0 3px rgba(117, 164, 57, 0.3),
+                        0 0 20px rgba(117, 164, 57, 0.2);
         }
 
         .filter-row {
@@ -115,15 +161,18 @@
             padding: 10px 15px;
             border-radius: 5px;
             border: 1px solid var(--teal);
-            background-color: var(--dark-blue);
+            background-color: rgba(24, 32, 61, 0.7);
             color: var(--text-light);
             font-size: 1em;
             cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
         }
 
-        button:hover {
+        select:hover, button:hover {
             background: var(--green);
             color: var(--dark-blue);
+            box-shadow: 0 0 10px rgba(117, 164, 57, 0.5);
         }
 
         #moodSearch {
@@ -148,7 +197,7 @@
             display: block;
             width: 100%;
             padding: 15px;
-            background: var(--dark-purple);
+            background: linear-gradient(90deg, rgba(48, 25, 52, 0.8) 0%, rgba(22, 125, 157, 0.5) 100%);
             color: var(--text-lighter);
             border: 2px solid var(--green);
             border-radius: 6px;
@@ -157,13 +206,15 @@
             cursor: pointer;
             margin: 25px 0;
             transition: all 0.3s;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         .random-btn:hover {
             background: var(--green);
             color: var(--dark-blue);
             transform: translateY(-3px);
-            box-shadow: 0 4px 15px rgba(117, 164, 57, 0.4);
+            box-shadow: 0 8px 25px rgba(117, 164, 57, 0.4);
         }
 
         .random-message {
@@ -175,6 +226,7 @@
             background: rgba(117, 164, 57, 0.1);
             border-radius: 5px;
             text-align: center;
+            backdrop-filter: blur(5px);
         }
 
         #animeContainer {
@@ -184,26 +236,45 @@
         }
 
         .anime-card {
-            background: var(--dark-blue);
+            background: linear-gradient(145deg, rgba(24, 32, 61, 0.7) 0%, rgba(48, 25, 52, 0.5) 100%);
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .anime-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            z-index: -1;
+            border-radius: 10px;
         }
 
         .anime-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 25px rgba(0,0,0,0.4);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
         .anime-image {
             width: 100%;
             height: 300px;
             object-fit: cover;
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .anime-info {
             padding: 15px;
+            background: linear-gradient(to top, rgba(24, 32, 61, 0.9) 0%, transparent 100%);
         }
 
         .anime-title {
@@ -213,6 +284,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .anime-meta {
@@ -239,6 +311,7 @@
         .anime-score {
             color: #ff9e3b;
             font-weight: 600;
+            text-shadow: 0 0 5px rgba(255, 158, 59, 0.3);
         }
 
         .anime-description {
@@ -263,15 +336,17 @@
             text-align: center;
             font-size: 0.9em;
             transition: all 0.2s;
+            backdrop-filter: blur(5px);
         }
 
         .watch-btn {
-            background: var(--teal);
+            background: linear-gradient(to right, var(--teal), #126a82);
             color: white;
         }
 
         .watch-btn:hover {
-            background: #126a82;
+            background: linear-gradient(to right, #126a82, var(--teal));
+            box-shadow: 0 0 10px rgba(22, 125, 157, 0.5);
         }
 
         .no-trailer-btn {
@@ -285,26 +360,29 @@
         }
 
         .fav-btn {
-            background: var(--dark-blue);
+            background: rgba(24, 32, 61, 0.7);
             border: 1px solid var(--teal);
         }
 
         .fav-btn.favorited {
             background: var(--green);
             border-color: var(--green);
+            box-shadow: 0 0 10px rgba(117, 164, 57, 0.5);
         }
 
         .fav-btn:hover {
             background: var(--green);
+            box-shadow: 0 0 10px rgba(117, 164, 57, 0.5);
         }
 
         .details-btn {
-            background: var(--dark-purple);
+            background: linear-gradient(to right, var(--dark-purple), #402948);
             color: white;
         }
 
         .details-btn:hover {
-            background: #402948;
+            background: linear-gradient(to right, #402948, var(--dark-purple));
+            box-shadow: 0 0 10px rgba(48, 25, 52, 0.5);
         }
 
         #loading {
@@ -318,18 +396,20 @@
             display: block;
             margin: 30px auto;
             padding: 12px 25px;
-            background: var(--teal);
+            background: linear-gradient(to right, var(--teal), #126a82);
             color: white;
             border: none;
             border-radius: 5px;
             font-size: 1.1em;
             cursor: pointer;
             transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         #loadMoreBtn:hover {
-            background: var(--green);
+            background: linear-gradient(to right, var(--green), #75A439);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(117, 164, 57, 0.4);
         }
 
         #loadMoreBtn:disabled {
@@ -340,11 +420,13 @@
 
         /* Favorites Sidebar */
         .favorites-section {
-            background: var(--dark-purple);
+            background: rgba(48, 25, 52, 0.7);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
         .favorites-header {
@@ -360,6 +442,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            text-shadow: 0 0 5px rgba(117, 164, 57, 0.3);
         }
 
         .favorites-count {
@@ -392,6 +475,7 @@
             object-fit: cover;
             border-radius: 4px;
             flex-shrink: 0;
+            border: 1px solid var(--glass-border);
         }
 
         .favorite-details {
@@ -424,6 +508,7 @@
 
         .remove-favorite:hover {
             color: var(--green);
+            text-shadow: 0 0 5px rgba(117, 164, 57, 0.3);
         }
 
         .empty-favorites {
@@ -435,11 +520,13 @@
 
         /* Footer */
         .footer {
-            background: var(--dark-purple);
+            background: rgba(48, 25, 52, 0.8);
             padding: 20px;
             text-align: center;
             margin-top: 40px;
             border-top: 3px solid var(--teal);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
         /* Responsive */
@@ -493,6 +580,34 @@
                 flex-direction: column;
             }
         }
+
+        /* Futuristic glowing elements */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(117, 164, 57, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(117, 164, 57, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(117, 164, 57, 0); }
+        }
+
+        .glow-effect {
+            position: relative;
+        }
+
+        .glow-effect::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            box-shadow: 0 0 15px rgba(22, 125, 157, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .glow-effect:hover::after {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -539,6 +654,7 @@
                         <option value="bypopularity">Popular</option>
                         <option value="airing">Airing</option>
                         <option value="upcoming">Upcoming</option>
+
                     </select>
                     
                     <select id="typeFilter">
