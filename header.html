@@ -261,12 +261,13 @@
     <script>
         // Make nav links interactive
         document.querySelectorAll('nav a').forEach(link => {
-            if(link.getAttribute('href') === '#') {
+            if (link.getAttribute('href') === '#') {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     alert(`Navigating to ${this.textContent} section`);
                 });
-          
+            }
+        });
     </script>
 </body>
 </html>
