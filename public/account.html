@@ -1,396 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account | Nogaka</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Account | Nogaka</title>
+  <style>
+    :root {
+      --green: #75A439;
+      --teal: #167D9D;
+      --teal-alt: #177E9D;
+      --deep-bg: #301934;
+      --text-light: #ffffff;
+    }
 
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            position: relative;
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
 
-        .back-home-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #ffffff;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            z-index: 100;
-        }
+    body {
+      background-color: var(--deep-bg);
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      position: relative;
+    }
 
-        .back-home-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateX(-4px);
-        }
+    .back-to-home {
+      position: absolute;
+      top: 25px;
+      left: 25px;
+      color: var(--text-light);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      z-index: 10;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 30px;
+      transition: all 0.3s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 14px;
+    }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    .back-to-home:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateX(-3px);
+    }
 
-        .account-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-        }
+    .back-to-home span {
+      margin-right: 8px;
+      transition: transform 0.3s;
+    }
 
-        .account-box {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            width: 50%;
-            min-width: 500px;
-            max-width: 600px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
+    .back-to-home:hover span {
+      transform: translateX(-3px);
+    }
 
-        .account-logo {
-            margin-bottom: 30px;
-        }
+    .account-wrapper {
+      background-color: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      width: 90%;
+      max-width: 500px;
+    }
 
-        .account-logo img {
-            height: 80px;
-        }
+    .tabs {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
 
-        .account-title {
-            font-size: 28px;
-            margin-bottom: 20px;
-            background: linear-gradient(90deg, #75A439 0%, #177E9D 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
+    .tabs button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: none;
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: background 0.3s;
+      border-radius: 12px;
+    }
 
-        .account-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+    .tabs button.active {
+      background: linear-gradient(90deg, var(--green), var(--teal));
+      color: white;
+    }
 
-        .form-group {
-            text-align: left;
-        }
+    form {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
+    form.active {
+      display: flex;
+    }
 
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border-radius: 8px;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
+    label {
+      font-weight: 600;
+    }
 
-        .form-group input:focus {
-            outline: none;
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 0 2px #75A439;
-        }
+    input {
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 16px;
+    }
 
-        .form-actions {
-            margin-top: 20px;
-        }
+    input:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 0 2px var(--green);
+    }
 
-        .btn {
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            font-size: 16px;
-            width: 100%;
-        }
+    .btn {
+      background: linear-gradient(90deg, var(--green), var(--teal));
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
 
-        .btn-primary {
-            background: linear-gradient(90deg, #75A439 0%, #177E9D 100%);
-            color: #ffffff;
-        }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(23, 126, 157, 0.4);
+    }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 219, 222, 0.3);
-        }
+    .message {
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
+      display: none;
+    }
 
-        .account-switch {
-            margin-top: 20px;
-            font-size: 14px;
-        }
+    .message.success {
+      background-color: rgba(117, 164, 57, 0.2);
+      color: #75A439;
+      display: block;
+    }
 
-        .account-switch a {
-            color: #75A439;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .account-switch a:hover {
-            text-decoration: underline;
-        }
-
-        .status-message {
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .status-message.success {
-            background-color: rgba(40, 167, 69, 0.2);
-            color: #28a745;
-            display: block;
-        }
-
-        .status-message.error {
-            background-color: rgba(220, 53, 69, 0.2);
-            color: #dc3545;
-            display: block;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .remember-me input {
-            width: auto;
-        }
-
-        @media (max-width: 768px) {
-            .account-box {
-                width: 90%;
-                min-width: unset;
-                padding: 30px 20px;
-            }
-
-            .account-title {
-                font-size: 24px;
-            }
-
-            .back-home-btn {
-                top: 10px;
-                left: 10px;
-                font-size: 14px;
-                padding: 6px 12px;
-            }
-        }
-    </style>
+    .message.error {
+      background-color: rgba(220, 53, 69, 0.2);
+      color: #dc3545;
+      display: block;
+    }
+  </style>
 </head>
 <body>
-    <a href="home.html" class="back-home-btn">
-        <i class="fas fa-arrow-left"></i> Back to Home
-    </a>
+  <a href="home.html" class="back-to-home">
+    <span>←</span> Back to Home
+  </a>
 
-    <main class="account-container">
-        <div class="container">
-            <div class="account-box">
-                <div class="account-logo">
-                    <img src="Nogaka.png" alt="Nogaka Logo">
-                </div>
+  <div class="account-wrapper">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="login">Sign In</button>
+      <button class="tab-btn" data-tab="register">Create Account</button>
+    </div>
 
-                <div class="account-tabs" id="accountTabs">
-                    <button class="tab-btn active" data-tab="signin">
-                        <i class="fas fa-sign-in-alt"></i> Sign In
-                    </button>
-                    <button class="tab-btn" data-tab="create">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </button>
-                </div>
+    <div id="message" class="message"></div>
 
-                <div id="statusMessage" class="status-message"></div>
+    <!-- LOGIN -->
+    <form id="loginForm" class="active">
+      <label for="loginUser">Username</label>
+      <input type="text" id="loginUser" required />
 
-                <form id="signinForm" class="account-form" style="display: block;">
-                    <h2 class="account-title">Welcome Back</h2>
-                    <div class="form-group">
-                        <label for="signin-email">Email</label>
-                        <input type="email" id="signin-email" placeholder="Enter your email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signin-password">Password</label>
-                        <input type="password" id="signin-password" placeholder="Enter your password" required>
-                    </div>
-                    <div class="remember-me">
-                        <input type="checkbox" id="remember-me">
-                        <label for="remember-me">Remember me</label>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Sign In</button>
-                    </div>
-                    <div class="account-switch">
-                        Don't have an account? <a href="account.html?action=create">Create one</a>
-                    </div>
-                </form>
+      <label for="loginPass">Password</label>
+      <input type="password" id="loginPass" required />
 
-                <form id="createForm" class="account-form" style="display: none;">
-                    <h2 class="account-title">Join Nogaka</h2>
-                    <div class="form-group">
-                        <label for="create-name">Full Name</label>
-                        <input type="text" id="create-name" placeholder="Enter your full name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="create-email">Email</label>
-                        <input type="email" id="create-email" placeholder="Enter your email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="create-password">Password (min 8 characters)</label>
-                        <input type="password" id="create-password" placeholder="Create a password" minlength="8" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="create-confirm">Confirm Password</label>
-                        <input type="password" id="create-confirm" placeholder="Confirm your password" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Create Account</button>
-                    </div>
-                    <div class="account-switch">
-                        Already have an account? <a href="account.html?action=signin">Sign in</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </main>
+      <button type="submit" class="btn">Login</button>
+    </form>
 
-    <div id="footer-container"></div>
+    <!-- REGISTER -->
+    <form id="registerForm">
+      <label for="regUser">Username</label>
+      <input type="text" id="regUser" required />
 
-    <script>
-        fetch('header.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('header-container').innerHTML = data;
-                initHeaderScripts();
-            });
+      <label for="regPass">Password</label>
+      <input type="password" id="regPass" minlength="4" required />
 
-        fetch('footer.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('footer-container').innerHTML = data;
-            });
+      <label for="regConfirm">Confirm Password</label>
+      <input type="password" id="regConfirm" required />
 
-        const accounts = JSON.parse(localStorage.getItem('nogakaAccounts')) || [];
-        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+      <button type="submit" class="btn">Register</button>
+    </form>
+  </div>
 
-        const tabs = document.querySelectorAll('.tab-btn');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                const tabName = tab.getAttribute('data-tab');
-                document.getElementById('signinForm').style.display = tabName === 'signin' ? 'block' : 'none';
-                document.getElementById('createForm').style.display = tabName === 'create' ? 'block' : 'none';
-                
-                clearStatus();
-            });
-        });
+  <script>
+    const tabs = document.querySelectorAll('.tab-btn');
+    const forms = {
+      login: document.getElementById('loginForm'),
+      register: document.getElementById('registerForm')
+    };
+    const messageBox = document.getElementById('message');
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const action = urlParams.get('action');
-        
-        if (action === 'create') {
-            document.querySelector('[data-tab="create"]').click();
-        }
+    // Handle tab switching
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
 
-        function clearStatus() {
-            const statusMessage = document.getElementById('statusMessage');
-            statusMessage.textContent = '';
-            statusMessage.classList.remove('success', 'error');
-        }
+        const tabName = tab.dataset.tab;
+        Object.values(forms).forEach(f => f.classList.remove('active'));
+        forms[tabName].classList.add('active');
 
-        document.getElementById('signinForm').addEventListener('submit', function(event) {
-            event.preventDefault();
+        messageBox.textContent = '';
+        messageBox.classList.remove('success', 'error');
+      });
+    });
 
-            const email = document.getElementById('signin-email').value;
-            const password = document.getElementById('signin-password').value;
+    // Preload accounts with "bob"
+    const storedAccounts = JSON.parse(localStorage.getItem('nogakaAccounts')) || [];
+    if (!storedAccounts.find(acc => acc.username === 'bob')) {
+      storedAccounts.push({ username: 'bob', password: 'bobpass' });
+      localStorage.setItem('nogakaAccounts', JSON.stringify(storedAccounts));
+    }
 
-            const account = accounts.find(acc => acc.email === email && acc.password === password);
-            const statusMessage = document.getElementById('statusMessage');
+    // Login handler
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const username = document.getElementById('loginUser').value.trim();
+      const password = document.getElementById('loginPass').value;
 
-            if (account) {
-                localStorage.setItem('currentUser', JSON.stringify(account));
-                currentUser = account;
-                statusMessage.textContent = 'Welcome back, ' + account.name;
-                statusMessage.classList.add('success');
-                setTimeout(() => {
-                    window.location.href = 'home.html'; 
-                }, 1500);
-            } else {
-                statusMessage.textContent = 'Invalid credentials, please try again.';
-                statusMessage.classList.add('error');
-            }
-        });
+      const accounts = JSON.parse(localStorage.getItem('nogakaAccounts')) || [];
+      const user = accounts.find(u => u.username === username && u.password === password);
 
-        document.getElementById('createForm').addEventListener('submit', function(event) {
-            event.preventDefault();
+      if (user) {
+        messageBox.textContent = `Welcome back, ${user.username}!`;
+        messageBox.className = 'message success';
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        setTimeout(() => window.location.href = 'home.html', 1500);
+      } else {
+        messageBox.textContent = 'Invalid username or password.';
+        messageBox.className = 'message error';
+      }
+    });
 
-            const name = document.getElementById('create-name').value;
-            const email = document.getElementById('create-email').value;
-            const password = document.getElementById('create-password').value;
-            const confirmPassword = document.getElementById('create-confirm').value;
+    // Register handler
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const username = document.getElementById('regUser').value.trim();
+      const password = document.getElementById('regPass').value;
+      const confirm = document.getElementById('regConfirm').value;
 
-            const statusMessage = document.getElementById('statusMessage');
+      let accounts = JSON.parse(localStorage.getItem('nogakaAccounts')) || [];
 
-            if (password !== confirmPassword) {
-                statusMessage.textContent = 'Passwords do not match.';
-                statusMessage.classList.add('error');
-                return;
-            }
+      if (accounts.find(acc => acc.username === username)) {
+        messageBox.textContent = 'Username already exists.';
+        messageBox.className = 'message error';
+        return;
+      }
 
-            if (accounts.some(acc => acc.email === email)) {
-                statusMessage.textContent = 'Email is already taken.';
-                statusMessage.classList.add('error');
-                return;
-            }
+      if (password !== confirm) {
+        messageBox.textContent = 'Passwords do not match.';
+        messageBox.className = 'message error';
+        return;
+      }
 
-            const newAccount = { name, email, password };
-            accounts.push(newAccount);
-            localStorage.setItem('nogakaAccounts', JSON.stringify(accounts));
+      accounts.push({ username, password });
+      localStorage.setItem('nogakaAccounts', JSON.stringify(accounts));
 
-            statusMessage.textContent = 'Account created successfully!';
-            statusMessage.classList.add('success');
-            setTimeout(() => {
-                window.location.href = 'home.html'; 
-            }, 1500);
-        });
-    </script>
+      messageBox.textContent = 'Account created successfully!';
+      messageBox.className = 'message success';
+
+      setTimeout(() => {
+        tabs[0].click();
+      }, 1200);
+    });
+  </script>
 </body>
 </html>
