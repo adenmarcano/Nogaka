@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nogaka - Dive Into Anime & Manga</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body style="background-color: #000000; color: #fff;">
+  <!-- Header Include -->
+  <div id="header-container"></div>
+
+  <!-- Main Content -->
+  <main class="container" style="background-color: #18203D; padding: 20px; max-width: 93%; border-radius: 10px;">
+
+    <section class="hero" style="text-align: center; padding: 40px;">
+      <h1>Welcome to <span class="highlight" style="color: #75A439;">Nogaka</span></h1>
+      <p>Your ultimate portal to the anime & manga multiverse.</p>
+
+    </section>
+
+    <section class="features" style="display: flex; justify-content: space-around; margin-top: 40px;">
+      <div class="feature-card" style="background-color: #177E9D; padding: 20px; border-radius: 8px; color: #fff; text-align: center; width: 30%;">
+        <i class="fas fa-fire" style="font-size: 40px;"></i>
+        <h3>Trending Now</h3>
+        <p>See what's hot in the anime and manga scene—updated daily!</p>
+      </div>
+      <div class="feature-card" style="background-color: #177E9D; padding: 20px; border-radius: 8px; color: #fff; text-align: center; width: 30%;">
+        <i class="fas fa-heart" style="font-size: 40px;"></i>
+        <h3>Personalized Picks</h3>
+        <p>Get manga and anime suggestions based on your current vibe.</p>
+      </div>
+      <div class="feature-card" style="background-color: #177E9D; padding: 20px; border-radius: 8px; color: #fff; text-align: center; width: 30%;">
+        <i class="fas fa-users" style="font-size: 40px;"></i>
+        <h3>Community Driven</h3>
+        <p>Join discussions, drop reviews, and share your favorite moments.</p>
+      </div>
+    </section>
+
+    <!-- Comment Section -->
+    <section class="comments-section" style="margin-top: 40px; color: #fff;">
+      <h2 style="color: #75A439;">Community Comments</h2>
+      <div id="comments-container" style="margin-bottom: 20px;">
+        <!-- Comments will be injected here -->
+      </div>
+      <textarea id="new-comment" placeholder="Add your comment..." style="width: 100%; padding: 12px 20px; margin-top: 10px; border-radius: 5px; border: 1px solid #177E9D; background-color: #18203D; color: #fff;"></textarea>
+      <button id="submit-comment" class="cta-button" style="background-color: #75A439; color: #fff; padding: 12px 20px; border-radius: 5px; margin-top: 10px;">Submit Comment</button>
+    </section>
+  </main>
+
+  <!-- Footer Include -->
+  <div id="footer-container"></div>
+
+  <!-- JavaScript to load header, footer, and comment section -->
+  <script>
+    // Load Header
+    fetch('header.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('header-container').innerHTML = data;
+        initHeaderScripts();
+      });
+
+    // Load Footer
+    fetch('footer.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('footer-container').innerHTML = data;
+        initFooterScripts();
+      });
+
+    // Load Comments from accounts.html (This is a simulated example; replace with actual data fetching)
+    function loadComments() {
+      fetch('accounts.html')  // Adjust the URL to point to the correct source for accounts
+        .then(response => response.text())
+        .then(data => {
+          const accounts = extractAccounts(data);  // You'll need to define how to extract account comments
+          const commentsContainer = document.getElementById('comments-container');
+          
+          accounts.forEach(account => {
+            const commentElement = document.createElement('div');
+            commentElement.classList.add('comment');
+            commentElement.innerHTML = `
+              <strong>${account.username}</strong><br/>
+              <p>${account.comment}</p>
+              <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
+                Like <span class="like-count">0</span>
+              </button>
+            `;
+            commentsContainer.appendChild(commentElement);
+
+            // Attach like functionality
+            const likeButton = commentElement.querySelector('.like-button');
+            const likeCount = commentElement.querySelector('.like-count');
+            let likes = 0;
+
+            likeButton.addEventListener('click', () => {
+              likes++;
+              likeCount.textContent = likes;
+              likeButton.style.backgroundColor = '#177E9D'; // Change button color when liked
+            });
+          });
+        });
+    }
+
+    // Example function to simulate extracting account data from accounts.html
+    function extractAccounts(data) {
+      // Simulated accounts data extraction (you'll need actual parsing logic)
+      return [
+        { username: 'animeFan123', comment: 'This site is amazing, I love the anime recommendations!' },
+        { username: 'mangaMaster', comment: 'Great content, I found so many new manga series!' },
+      ];
+    }
+
+    // Submit a new comment (this would need to be stored or sent to a backend in a real app)
+    document.getElementById('submit-comment').addEventListener('click', () => {
+      const commentText = document.getElementById('new-comment').value;
+      if (commentText) {
+        const newComment = document.createElement('div');
+        newComment.classList.add('comment');
+        newComment.innerHTML = `
+          <strong>Guest</strong><br/>
+          <p>${commentText}</p>
+          <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
+            Like <span class="like-count">0</span>
+          </button>
+        `;
+        document.getElementById('comments-container').appendChild(newComment);
+        document.getElementById('new-comment').value = ''; // Clear the input
+
+        // Attach like functionality to new comment
+        const likeButton = newComment.querySelector('.like-button');
+        const likeCount = newComment.querySelector('.like-count');
+        let likes = 0;
+
+        likeButton.addEventListener('click', () => {
+          likes++;
+          likeCount.textContent = likes;
+          likeButton.style.backgroundColor = '#177E9D'; // Change button color when liked
+        });
+      }
+    });
+
+    // Footer interactions
+    function initFooterScripts() {
+      const copyright = document.querySelector('.footer-bottom p');
+      if (copyright) {
+        const year = new Date().getFullYear();
+        copyright.innerHTML = `&copy; ${year} Nogaka. All rights reserved.`;
+      }
+    }
+
+    // Run when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      loadComments();
+    });
+  </script>
+
+  <style>
+    
+    body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(117, 164, 57, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(22, 125, 157, 0.15) 0%, transparent 50%),
+                linear-gradient(135deg, #121212 0%, #1a1a2e 100%);
+            background-attachment: fixed;
+        }
+
+    /* Comments Section Styles */
+    .comments-section {
+      margin-top: 40px;
+    }
+
+    .comments-section h2 {
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: #75A439;
+    }
+
+    .comment {
+      background-color: #18203D;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      color: #fff;
+    }
+
+    .comment strong {
+      font-weight: bold;
+      color: #75A439;
+    }
+
+    .comments-section textarea {
+      width: 100%;
+      padding: 12px 20px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #177E9D;
+      background-color: #18203D;
+      color: #fff;
+    }
+
+    .comments-section button {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 12px 20px;
+      background-color: #75A439;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+
+    .comments-section button:hover {
+      background-color: #177E9D;
+    }
+
+    .like-button {
+      background-color: #75A439;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .like-button:hover {
+      background-color: #177E9D;
+    }
+
+    .like-count {
+      margin-left: 5px;
+    }
+  </style>
+</body>
+</html>
