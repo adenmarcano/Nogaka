@@ -614,22 +614,21 @@
 
       <!-- Random Recommendation Button -->
       <button id="random-btn" class="random-btn">
-        <i class="fas fa-random"></i> Get Random Recommendations
+        <i class="fas fa-random"></i> Get Random Manga
       </button>
+
+      <!-- Random Manga Display -->
+      <div id="random-manga-display">
+        <div class="manga-grid" id="random-manga">
+          <p class="empty-message">Click the button above to get a random manga recommendation!</p>
+        </div>
+      </div>
 
       <!-- Top Manga Section -->
       <h2 class="section-title">Popular Manga</h2>
       <div class="manga-grid" id="top-manga">
         <div class="loading">
           <i class="fas fa-spinner"></i> Loading popular manga...
-        </div>
-      </div>
-
-      <!-- Random Recommendations -->
-      <h2 class="section-title">You Might Also Like</h2>
-      <div class="manga-grid" id="random-manga">
-        <div class="loading">
-          <i class="fas fa-spinner"></i> Loading recommendations...
         </div>
       </div>
     </div>
@@ -680,6 +679,7 @@
     // DOM elements
     const topMangaGrid = document.getElementById('top-manga');
     const randomMangaGrid = document.getElementById('random-manga');
+    const randomMangaDisplay = document.getElementById('random-manga-display');
     const genreButtonsContainer = document.getElementById('genre-buttons');
     const searchInput = document.getElementById('search-input');
     const searchBtn = document.getElementById('search-btn');
@@ -697,7 +697,6 @@
 
       // Load initial manga data
       fetchTopManga();
-      fetchRandomManga();
 
       // Load favorites
       renderFavorites();
@@ -708,7 +707,7 @@
         if (e.key === 'Enter') handleSearch();
       });
 
-      randomBtn.addEventListener('click', fetchRandomManga);
+      randomBtn.addEventListener('click', fetchSingleRandomManga);
       
       // Modal close button
       closeModalBtn.addEventListener('click', closeModal);
@@ -808,54 +807,57 @@
       }
     }
 
-    // Fetch random manga recommendations
-    async function fetchRandomManga() {
-  randomMangaGrid.innerHTML = `
-    <div class="loading">
-      <i class="fas fa-spinner"></i> Loading recommendations...
-    </div>
-  `;
+    // Fetch a single random manga
+    async function fetchSingleRandomManga() {
+      randomMangaGrid.innerHTML = `
+        <div class="loading">
+          <i class="fas fa-spinner"></i> Finding a high-quality random manga for you...
+        </div>
+      `;
 
-  try {
-    // Create an array of different endpoints to get varied results
-    const endpoints = [
-      `${JIKAN_API}/top/manga`,
-      `${JIKAN_API}/manga?order_by=random`,
-      `${JIKAN_API}/manga?order_by=members&sort=desc`
-    ];
+      try {
+        // First get a random page (1-10) from top manga (which are already high-rated)
+        const randomPage = Math.floor(Math.random() * 10) + 1;
+        
+        // Fetch a page of top manga results
+        const response = await fetch(`${JIKAN_API}/top/manga?page=${randomPage}&limit=25`);
+        
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
 
-    // Pick a random endpoint
-    const randomEndpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
-    
-    // Get random page (1-5) to get varied results
-    const randomPage = Math.floor(Math.random() * 5) + 1;
-    const url = `${randomEndpoint}?page=${randomPage}&limit=6`;
-    
-    const response = await fetch(url);
+        const { data } = await response.json();
+        
+        // Filter for manga with score ≥ 7.5 (high quality)
+        const highRatedManga = data.filter(manga => manga.score && manga.score >= 7.5);
+        
+        if (highRatedManga.length > 0) {
+          // Pick one at random from the high-rated ones
+          const randomManga = highRatedManga[Math.floor(Math.random() * highRatedManga.length)];
+          
+          // Clear the grid and display just this one manga
+          randomMangaGrid.innerHTML = '';
+          displayManga([randomManga], randomMangaGrid);
+        } else {
+          throw new Error('No manga found on this page');
+        }
+      } catch (error) {
+        console.error('Error fetching random manga:', error);
+        randomMangaGrid.innerHTML = `
+          <div class="error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Could not load manga. Please try again.</p>
+            <button onclick="fetchSingleRandomManga()" style="margin-top: 10px; padding: 8px 16px; background: var(--teal); color: white; border: none; border-radius: 4px; cursor: pointer;">
+              Try Again
+            </button>
+          </div>
+        `;
+      }
+    }
 
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    // Fetch a random manga when the button is clicked
+    randomBtn.addEventListener('click', fetchSingleRandomManga);
 
-    const { data } = await response.json();
-
-    // If we got the random order endpoint, we don't need to shuffle
-    const mangaList = randomEndpoint.includes('random') ? data.slice(0, 6) : 
-      // Otherwise shuffle the results for more randomness
-      data.sort(() => 0.5 - Math.random()).slice(0, 6);
-
-      displayManga(mangaList, randomMangaGrid);
-  } catch (error) {
-    console.error('Error fetching random manga:', error);
-    randomMangaGrid.innerHTML = `
-      <div class="error">
-        <i class="fas fa-exclamation-triangle"></i>
-        <p>Could not load recommendations</p>
-        <button onclick="fetchRandomManga()" style="margin-top: 10px; padding: 8px 16px; background: var(--teal); color: white; border: none; border-radius: 4px; cursor: pointer;">
-          Try Again
-        </button>
-      </div>
-    `;
-  }
-}
+    // Update the random button text to be more descriptive
+    randomBtn.innerHTML = '<i class="fas fa-random"></i> Get Random Manga';
 
     // Display manga in a grid
     function displayManga(mangaList, container) {
