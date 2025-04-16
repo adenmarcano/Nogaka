@@ -4,6 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Account | Nogaka</title>
+  
+  <!-- Import Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTzMzj-WjYucvSuPFOul-53gStIfWiWZg",
+      authDomain: "nogaka-bd091.firebaseapp.com",
+      projectId: "nogaka-bd091",
+      storageBucket: "nogaka-bd091.firebasestorage.app",
+      messagingSenderId: "910853337142",
+      appId: "1:910853337142:web:a38f0109f2d5012529e897",   
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Get Firebase service references
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+  </script>
+  
   <style>
     :root {
       --green: #75A439;
@@ -178,8 +203,8 @@
 
     <!-- LOGIN -->
     <form id="loginForm" class="active">
-      <label for="loginUser">Username</label>
-      <input type="text" id="loginUser" required />
+      <label for="loginUser">Email</label>
+      <input type="email" id="loginUser" required />
 
       <label for="loginPass">Password</label>
       <input type="password" id="loginPass" required />
@@ -189,11 +214,14 @@
 
     <!-- REGISTER -->
     <form id="registerForm">
-      <label for="regUser">Username</label>
-      <input type="text" id="regUser" required />
+      <label for="regUsername">Username</label>
+      <input type="text" id="regUsername" required minlength="3" maxlength="20" />
+
+      <label for="regUser">Email</label>
+      <input type="email" id="regUser" required />
 
       <label for="regPass">Password</label>
-      <input type="password" id="regPass" minlength="4" required />
+      <input type="password" id="regPass" minlength="6" required />
 
       <label for="regConfirm">Confirm Password</label>
       <input type="password" id="regConfirm" required />
@@ -225,47 +253,40 @@
       });
     });
 
-    // Preload accounts with "bob"
-    const storedAccounts = JSON.parse(localStorage.getItem('nogakaAccounts')) || [];
-    if (!storedAccounts.find(acc => acc.username === 'bob')) {
-      storedAccounts.push({ username: 'bob', password: 'bobpass' });
-      localStorage.setItem('nogakaAccounts', JSON.stringify(storedAccounts));
-    }
-
     // Login handler
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const username = document.getElementById('loginUser').value.trim();
+      const email = document.getElementById('loginUser').value.trim();
       const password = document.getElementById('loginPass').value;
 
-      const accounts = JSON.parse(localStorage.getItem('nogakaAccounts')) || [];
-      const user = accounts.find(u => u.username === username && u.password === password);
-
-      if (user) {
-        messageBox.textContent = `Welcome back, ${user.username}!`;
+      try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        messageBox.textContent = `Welcome back!`;
         messageBox.className = 'message success';
-        localStorage.setItem('currentUser', JSON.stringify(user));
+        
+        // Store user data in session
+        sessionStorage.setItem('currentUser', JSON.stringify({
+          uid: user.uid,
+          email: user.email
+        }));
+
         setTimeout(() => window.location.href = 'home.html', 1500);
-      } else {
-        messageBox.textContent = 'Invalid username or password.';
+      } catch (error) {
+        messageBox.textContent = 'Invalid email or password.';
         messageBox.className = 'message error';
+        console.error(error);
       }
     });
 
     // Register handler
-    document.getElementById('registerForm').addEventListener('submit', function (e) {
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const username = document.getElementById('regUser').value.trim();
+      const username = document.getElementById('regUsername').value.trim();
+      const email = document.getElementById('regUser').value.trim();
       const password = document.getElementById('regPass').value;
       const confirm = document.getElementById('regConfirm').value;
-
-      let accounts = JSON.parse(localStorage.getItem('nogakaAccounts')) || [];
-
-      if (accounts.find(acc => acc.username === username)) {
-        messageBox.textContent = 'Username already exists.';
-        messageBox.className = 'message error';
-        return;
-      }
 
       if (password !== confirm) {
         messageBox.textContent = 'Passwords do not match.';
@@ -273,15 +294,28 @@
         return;
       }
 
-      accounts.push({ username, password });
-      localStorage.setItem('nogakaAccounts', JSON.stringify(accounts));
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
 
-      messageBox.textContent = 'Account created successfully!';
-      messageBox.className = 'message success';
+        await db.collection('users').doc(user.uid).set({
+          username: username,
+          email: email,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-      setTimeout(() => {
-        tabs[0].click();
-      }, 1200);
+        messageBox.textContent = 'Account created successfully!';
+        messageBox.className = 'message success';
+
+        setTimeout(() => {
+          tabs[0].click();
+        }, 1200);
+      } catch (error) {
+        messageBox.textContent = error.message;
+        messageBox.className = 'message error';
+        console.error(error);
+      }
     });
   </script>
 </body>
