@@ -252,33 +252,32 @@
         messageBox.classList.remove('success', 'error');
       });
     });
-
+    
     // Login handler
     document.getElementById('loginForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const email = document.getElementById('loginUser').value.trim();
-      const password = document.getElementById('loginPass').value;
+        e.preventDefault();
+        const email = document.getElementById('loginUser').value.trim();
+        const password = document.getElementById('loginPass').value;
 
-      try {
+        try {
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         const user = userCredential.user;
         
-        messageBox.textContent = `Welcome back!`;
+        // Fetch user data from Firestore
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.data();
+        
+        messageBox.textContent = `Welcome back, ${userData.username}!`;
         messageBox.className = 'message success';
         
-        // Store user data in session
-        sessionStorage.setItem('currentUser', JSON.stringify({
-          uid: user.uid,
-          email: user.email
-        }));
-
+        // No need to manually store user data, Firebase Auth handles it
         setTimeout(() => window.location.href = 'home.html', 1500);
-      } catch (error) {
+    } catch (error) {
         messageBox.textContent = 'Invalid email or password.';
         messageBox.className = 'message error';
         console.error(error);
-      }
-    });
+    }
+});
 
     // Register handler
     document.getElementById('registerForm').addEventListener('submit', async function (e) {
