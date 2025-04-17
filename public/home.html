@@ -4,9 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nogaka - Dive Into Anime & Manga</title>
-  <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
 </head>
+
 <body style="background-color: #000000; color: #fff;">
   <!-- Header Include -->
   <div id="header-container"></div>
@@ -17,7 +23,6 @@
     <section class="hero" style="text-align: center; padding: 40px;">
       <h1>Welcome to <span class="highlight" style="color: #75A439;">Nogaka</span></h1>
       <p>Your ultimate portal to the anime & manga multiverse.</p>
-
     </section>
 
     <section class="features" style="display: flex; justify-content: space-around; margin-top: 40px;">
@@ -43,6 +48,21 @@
       <h2 style="color: #75A439;">Community Comments</h2>
       <div id="comments-container" style="margin-bottom: 20px;">
         <!-- Comments will be injected here -->
+        <!-- Fallback comments in case accounts.html fails to load -->
+        <div class="comment">
+          <strong>animeFan123</strong><br/>
+          <p>This site is amazing, I love the anime recommendations!</p>
+          <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
+            Like <span class="like-count">0</span>
+          </button>
+        </div>
+        <div class="comment">
+          <strong>mangaMaster</strong><br/>
+          <p>Great content, I found so many new manga series!</p>
+          <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
+            Like <span class="like-count">0</span>
+          </button>
+        </div>
       </div>
       <textarea id="new-comment" placeholder="Add your comment..." style="width: 100%; padding: 12px 20px; margin-top: 10px; border-radius: 5px; border: 1px solid #177E9D; background-color: #18203D; color: #fff;"></textarea>
       <button id="submit-comment" class="cta-button" style="background-color: #75A439; color: #fff; padding: 12px 20px; border-radius: 5px; margin-top: 10px;">Submit Comment</button>
@@ -52,15 +72,84 @@
   <!-- Footer Include -->
   <div id="footer-container"></div>
 
-  <!-- JavaScript to load header, footer, and comment section -->
+  <script src="firebaseConfig.js"></script>
+  
   <script>
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
     // Load Header
     fetch('header.html')
       .then(response => response.text())
       .then(data => {
         document.getElementById('header-container').innerHTML = data;
-        initHeaderScripts();
-      });
+        setTimeout(initHeaderScripts, 200); // Ensures header elements exist first
+      })
+      .catch(error => console.error("Error loading header:", error));
+
+    // Header interactions (runs after header loads)
+    function initHeaderScripts() {
+      console.log("Header script initialized");
+      const accountBtn = document.getElementById('accountBtn');
+      const dropdownContent = document.getElementById('dropdownContent');
+      const accountBtnText = document.getElementById('accountBtnText');
+      const accountDropdown = document.querySelector('.user-dropdown');
+
+      if (accountBtn && dropdownContent && accountBtnText) {
+        console.log("Account button and dropdown found");
+
+        accountBtn.addEventListener('click', () => {
+          accountDropdown.classList.toggle('active');
+        });
+
+        // Check Firebase authentication state
+        auth.onAuthStateChanged(user => {
+          console.log("Auth state changed:", user);
+
+          if (user) {
+            // Fetch user data from Firestore
+            db.collection('users').doc(user.uid).get().then((doc) => {
+              if (doc.exists) {
+                const userData = doc.data();
+                const userName = userData.username || user.email;
+                accountBtnText.textContent = userName;
+                
+                dropdownContent.innerHTML = `
+                  <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                  <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
+                  <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                `;
+
+                document.getElementById('signOutLink').addEventListener('click', (e) => {
+                  e.preventDefault();
+                  auth.signOut().then(() => {
+                    console.log("User signed out");
+                    dropdownContent.style.display = "none";
+                    accountBtnText.textContent = "Account";
+                    window.location.reload();
+                  });
+                });
+              }
+            });
+          } else {
+            dropdownContent.innerHTML = `
+              <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+              <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
+              <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+            `;
+            accountBtnText.textContent = "Account";
+          }
+        });
+
+        document.addEventListener("click", (event) => {
+          if (!accountDropdown.contains(event.target)) {
+            accountDropdown.classList.remove("active");
+          }
+        });
+      } else {
+        console.error("Dropdown elements not found, check header.html structure.");
+      }
+    }
 
     // Load Footer
     fetch('footer.html')
@@ -68,66 +157,24 @@
       .then(data => {
         document.getElementById('footer-container').innerHTML = data;
         initFooterScripts();
-      });
+      })
+      .catch(error => console.error("Error loading footer:", error));
 
-    // Load Comments from accounts.html (This is a simulated example; replace with actual data fetching)
-    function loadComments() {
-      fetch('accounts.html')  // Adjust the URL to point to the correct source for accounts
-        .then(response => response.text())
-        .then(data => {
-          const accounts = extractAccounts(data);  // You'll need to define how to extract account comments
-          const commentsContainer = document.getElementById('comments-container');
-          
-          accounts.forEach(account => {
-            const commentElement = document.createElement('div');
-            commentElement.classList.add('comment');
-            commentElement.innerHTML = `
-              <strong>${account.username}</strong><br/>
-              <p>${account.comment}</p>
-              <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
-                Like <span class="like-count">0</span>
-              </button>
-            `;
-            commentsContainer.appendChild(commentElement);
-
-            // Attach like functionality
-            const likeButton = commentElement.querySelector('.like-button');
-            const likeCount = commentElement.querySelector('.like-count');
-            let likes = 0;
-
-            likeButton.addEventListener('click', () => {
-              likes++;
-              likeCount.textContent = likes;
-              likeButton.style.backgroundColor = '#177E9D'; // Change button color when liked
-            });
-          });
-        });
-    }
-
-    // Example function to simulate extracting account data from accounts.html
-    function extractAccounts(data) {
-      // Simulated accounts data extraction (you'll need actual parsing logic)
-      return [
-        { username: 'animeFan123', comment: 'This site is amazing, I love the anime recommendations!' },
-        { username: 'mangaMaster', comment: 'Great content, I found so many new manga series!' },
-      ];
-    }
-
-    // Submit a new comment (this would need to be stored or sent to a backend in a real app)
+    // Submit a new comment
     document.getElementById('submit-comment').addEventListener('click', () => {
       const commentText = document.getElementById('new-comment').value;
       if (commentText) {
         const newComment = document.createElement('div');
         newComment.classList.add('comment');
         newComment.innerHTML = `
-          <strong>Guest</strong><br/>
+          <strong>${firebase.auth().currentUser ? firebase.auth().currentUser.displayName || 'User' : 'Guest'}</strong><br/>
           <p>${commentText}</p>
           <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
             Like <span class="like-count">0</span>
           </button>
         `;
         document.getElementById('comments-container').appendChild(newComment);
-        document.getElementById('new-comment').value = ''; // Clear the input
+        document.getElementById('new-comment').value = '';
 
         // Attach like functionality to new comment
         const likeButton = newComment.querySelector('.like-button');
@@ -137,10 +184,24 @@
         likeButton.addEventListener('click', () => {
           likes++;
           likeCount.textContent = likes;
-          likeButton.style.backgroundColor = '#177E9D'; // Change button color when liked
+          likeButton.style.backgroundColor = '#177E9D';
         });
       }
     });
+
+    // Initialize like buttons for existing comments
+    function initLikeButtons() {
+      document.querySelectorAll('.like-button').forEach(button => {
+        const likeCount = button.querySelector('.like-count');
+        let likes = 0;
+
+        button.addEventListener('click', () => {
+          likes++;
+          likeCount.textContent = likes;
+          button.style.backgroundColor = '#177E9D';
+        });
+      });
+    }
 
     // Footer interactions
     function initFooterScripts() {
@@ -153,22 +214,21 @@
 
     // Run when page loads
     document.addEventListener('DOMContentLoaded', () => {
-      loadComments();
+      initLikeButtons();
     });
   </script>
 
   <style>
-    
     body {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            line-height: 1.6;
-            background-image: 
-                radial-gradient(circle at 25% 25%, rgba(117, 164, 57, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(22, 125, 157, 0.15) 0%, transparent 50%),
-                linear-gradient(135deg, #121212 0%, #1a1a2e 100%);
-            background-attachment: fixed;
-        }
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 25% 25%, rgba(117, 164, 57, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(22, 125, 157, 0.15) 0%, transparent 50%),
+        linear-gradient(135deg, #121212 0%, #1a1a2e 100%);
+      background-attachment: fixed;
+    }
 
     /* Comments Section Styles */
     .comments-section {
@@ -233,6 +293,43 @@
 
     .like-count {
       margin-left: 5px;
+    }
+
+    /* User Dropdown Styles */
+    .user-dropdown {
+      position: relative;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #1a1a2e;
+      min-width: 200px;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      z-index: 1000;
+      padding: 10px;
+    }
+
+    .dropdown-content a {
+      color: #e0e0e0;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #16213e;
+      color: #75A439;
+    }
+
+    .user-dropdown.active .dropdown-content {
+      display: block;
     }
   </style>
 </body>

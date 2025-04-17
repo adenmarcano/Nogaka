@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nogaka | Developer Favorites</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --green: #75A439;
@@ -285,22 +290,70 @@
     <div id="header-container"></div>
     <div id="footer-container"></div>
 
+    <script src="firebaseConfig.js"></script>
+  
     <script>
+    // Load Header
     fetch('header.html')
-      .then(response => response.text())
-      .then(data => {
+    .then(response => response.text())
+    .then(data => {
         document.getElementById('header-container').innerHTML = data;
-        initHeaderScripts();
-      });
+        setTimeout(initHeaderScripts, 200); // Ensures header elements exist first
+    })
+    .catch(error => console.error("Error loading header:", error));
 
-    // Header interactions
+    
+    // Header interactions (runs after header loads)
     function initHeaderScripts() {
-      document.querySelector('.btn-signin')?.addEventListener('click', () => {
-        alert('Redirecting to Sign In');
-      });
-      document.querySelector('.btn-signup')?.addEventListener('click', () => {
-        alert('Redirecting to Sign Up');
-      });
+        console.log("Header script initialized"); // Debugging step
+
+        const accountBtn = document.getElementById('accountBtn');
+        const dropdownContent = document.getElementById('dropdownContent');
+
+        if (accountBtn && dropdownContent) {
+        console.log("Account button and dropdown found");
+
+        accountBtn.addEventListener('click', () => {
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+        } else {
+        console.error("Dropdown elements not found, check header.html structure.");
+        }
+
+        // Check Firebase authentication state
+        if (typeof firebase !== "undefined") {
+        firebase.auth().onAuthStateChanged(user => {
+            console.log("Auth state changed:", user); // Debugging check
+
+            if (user) {
+            accountBtnText.textContent = userName;
+            dropdownContent.innerHTML = `
+                <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
+                <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+            `;
+
+            document.getElementById('signOutLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                firebase.auth().signOut().then(() => {
+                console.log("User signed out"); // Debugging step
+                dropdownContent.innerHTML = `
+                <a href="account.html?action=signin">Sign In</a>
+                
+                `;
+                });
+            });
+            } else {
+            dropdownContent.innerHTML = `
+                <a href="account.html?action=signin">Sign In</a>
+                <a href="account.html?action=create">Create Account</a>
+                <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+            `;
+            }
+        });
+        } else {
+        console.error("Firebase is not initialized or missing!");
+        }
     }
 
     // Footer interactions

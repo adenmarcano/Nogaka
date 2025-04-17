@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manga Browser</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
       --green: #75A439;
@@ -562,37 +567,87 @@
   </style>
 </head>
 <body>
-  <div id="header-container"></div>
-  <div id="footer-container"></div>
+    <div id="header-container"></div>
+    <div id="footer-container"></div> <!-- Keeping this unchanged -->
 
-  <script>
-  fetch('header.html')
-    .then(response => response.text())
-    .then(data => {
-      document.getElementById('header-container').innerHTML = data;
-      initHeaderScripts();
-    });
-
-  // Header interactions
-  function initHeaderScripts() {
-    document.querySelector('.btn-signin')?.addEventListener('click', () => {
-      alert('Redirecting to Sign In');
-    });
-    document.querySelector('.btn-signup')?.addEventListener('click', () => {
-      alert('Redirecting to Sign Up');
-    });
-  }
-
-  // Footer interactions
-  function initFooterScripts() {
-    const copyright =
-      document.querySelector('.footer-bottom p');
-    if (copyright) {
-      const year = new Date().getFullYear();
-      copyright.innerHTML = 
-        `&copy; ${year} Nogaka. All rights reserved.`;
-    }
-  }
+    <script src="firebaseConfig.js"></script>
+  
+    <script>
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+    
+        // Load Header
+        fetch('header.html')
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById('header-container').innerHTML = data;
+            setTimeout(initHeaderScripts, 200); // Ensures header elements exist first
+          })
+          .catch(error => console.error("Error loading header:", error));
+    
+        // Header interactions (runs after header loads)
+        function initHeaderScripts() {
+          console.log("Header script initialized");
+          const accountBtn = document.getElementById('accountBtn');
+          const dropdownContent = document.getElementById('dropdownContent');
+          const accountBtnText = document.getElementById('accountBtnText');
+          const accountDropdown = document.querySelector('.user-dropdown');
+    
+          if (accountBtn && dropdownContent && accountBtnText) {
+            console.log("Account button and dropdown found");
+    
+            accountBtn.addEventListener('click', () => {
+              accountDropdown.classList.toggle('active');
+            });
+    
+            // Check Firebase authentication state
+            auth.onAuthStateChanged(user => {
+              console.log("Auth state changed:", user);
+    
+              if (user) {
+                // Fetch user data from Firestore
+                db.collection('users').doc(user.uid).get().then((doc) => {
+                  if (doc.exists) {
+                    const userData = doc.data();
+                    const userName = userData.username || user.email;
+                    accountBtnText.textContent = userName;
+                    
+                    dropdownContent.innerHTML = `
+                      <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                      <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
+                      <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                    `;
+    
+                    document.getElementById('signOutLink').addEventListener('click', (e) => {
+                      e.preventDefault();
+                      auth.signOut().then(() => {
+                        console.log("User signed out");
+                        dropdownContent.style.display = "none";
+                        accountBtnText.textContent = "Account";
+                        window.location.reload();
+                      });
+                    });
+                  }
+                });
+              } else {
+                dropdownContent.innerHTML = `
+                  <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+                  <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
+                  <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                `;
+                accountBtnText.textContent = "Account";
+              }
+            });
+    
+            document.addEventListener("click", (event) => {
+              if (!accountDropdown.contains(event.target)) {
+                accountDropdown.classList.remove("active");
+              }
+            });
+          } else {
+            console.error("Dropdown elements not found, check header.html structure.");
+          }
+        }
   </script>
 
   <div class="main-container">
