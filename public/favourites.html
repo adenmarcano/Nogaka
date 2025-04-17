@@ -348,68 +348,81 @@
     <script src="firebaseConfig.js"></script>
   
     <script>
-    // Load Header
-    fetch('header.html')
-    .then(response => response.text())
-    .then(data => {
-        document.getElementById('header-container').innerHTML = data;
-        setTimeout(initHeaderScripts, 200); // Ensures header elements exist first
-    })
-    .catch(error => console.error("Error loading header:", error));
-
-    
-    // Header interactions (runs after header loads)
-    function initHeaderScripts() {
-        console.log("Header script initialized"); // Debugging step
-
-        const accountBtn = document.getElementById('accountBtn');
-        const dropdownContent = document.getElementById('dropdownContent');
-
-        if (accountBtn && dropdownContent) {
-        console.log("Account button and dropdown found");
-
-        accountBtn.addEventListener('click', () => {
-            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
-        });
-        } else {
-        console.error("Dropdown elements not found, check header.html structure.");
-        }
-
-        // Check Firebase authentication state
-        if (typeof firebase !== "undefined") {
-        firebase.auth().onAuthStateChanged(user => {
-            console.log("Auth state changed:", user); // Debugging check
-
-            if (user) {
-            accountBtnText.textContent = userName;
-            dropdownContent.innerHTML = `
-                <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
-                <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
-                <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
-            `;
-
-            document.getElementById('signOutLink').addEventListener('click', (e) => {
-                e.preventDefault();
-                firebase.auth().signOut().then(() => {
-                console.log("User signed out"); // Debugging step
-                dropdownContent.innerHTML = `
-                <a href="account.html?action=signin">Sign In</a>
-                
-                `;
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+            // Load Header
+            fetch('header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-container').innerHTML = data;
+                setTimeout(initHeaderScripts, 200); // Ensures header elements exist first
+            })
+            .catch(error => console.error("Error loading header:", error));
+        
+            // Header interactions (runs after header loads)
+            function initHeaderScripts() {
+            console.log("Header script initialized");
+            const accountBtn = document.getElementById('accountBtn');
+            const dropdownContent = document.getElementById('dropdownContent');
+            const accountBtnText = document.getElementById('accountBtnText');
+            const accountDropdown = document.querySelector('.user-dropdown');
+        
+            if (accountBtn && dropdownContent && accountBtnText) {
+                console.log("Account button and dropdown found");
+        
+                accountBtn.addEventListener('click', () => {
+                accountDropdown.classList.toggle('active');
                 });
-            });
+        
+                // Check Firebase authentication state
+                auth.onAuthStateChanged(user => {
+                console.log("Auth state changed:", user);
+        
+                if (user) {
+                    // Fetch user data from Firestore
+                    db.collection('users').doc(user.uid).get().then((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        const userName = userData.username || user.email;
+                        accountBtnText.textContent = userName;
+                        
+                        dropdownContent.innerHTML = `
+                        <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                        <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
+                        <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                        `;
+        
+                        document.getElementById('signOutLink').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        auth.signOut().then(() => {
+                            console.log("User signed out");
+                            dropdownContent.style.display = "none";
+                            accountBtnText.textContent = "Account";
+                            window.location.reload();
+                        });
+                        });
+                    }
+                    });
+                } else {
+                    dropdownContent.innerHTML = `
+                    <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+                    <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
+                    <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                    `;
+                    accountBtnText.textContent = "Account";
+                }
+                });
+        
+                document.addEventListener("click", (event) => {
+                if (!accountDropdown.contains(event.target)) {
+                    accountDropdown.classList.remove("active");
+                }
+                });
             } else {
-            dropdownContent.innerHTML = `
-                <a href="account.html?action=signin">Sign In</a>
-                <a href="account.html?action=create">Create Account</a>
-                <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
-            `;
+                console.error("Dropdown elements not found, check header.html structure.");
             }
-        });
-        } else {
-        console.error("Firebase is not initialized or missing!");
         }
-    }
 
     // Footer interactions
     function initFooterScripts() {
