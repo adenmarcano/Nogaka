@@ -889,8 +889,8 @@
       bronze: {
         cost: 50,
         symbols: [
-          { name: "100 Coins", emoji: "💰", color: "#FFD700", weight: 50, payout: 100 },
-          { name: "250 Coins", emoji: "💵", color: "#75A439", weight: 40, payout: 250 },
+          { name: "300 Coins", emoji: "💰", color: "#FFD700", weight: 50, payout: 300 },
+          { name: "750 Coins", emoji: "💵", color: "#75A439", weight: 40, payout: 750 },
           { name: "Free Spin", emoji: "🎰", color: "#167D9D", weight: 30, payout: 0 },
           { name: "Try Again", emoji: "🔄", color: "#CD7F32", weight: 5, payout: 0 }
         ],
@@ -899,9 +899,9 @@
       silver: {
         cost: 200,
         symbols: [
-          { name: "250 Coins", emoji: "💰", color: "#FFD700", weight: 40, payout: 250 },
-          { name: "1000 Coins", emoji: "💎", color: "#A45CFF", weight: 30, payout: 1000 },
-          { name: "2500 Coins", emoji: "🏆", color: "#FFD700", weight: 10, payout: 2500, isJackpot: true },
+          { name: "450 Coins", emoji: "💰", color: "#FFD700", weight: 40, payout: 450 },
+          { name: "2000 Coins", emoji: "💎", color: "#A45CFF", weight: 30, payout: 2000 },
+          { name: "3500 Coins", emoji: "🏆", color: "#FFD700", weight: 10, payout: 3500, isJackpot: true },
           { name: "Free Spin", emoji: "🎰", color: "#C0C0C0", weight: 20, payout: 0 }
         ],
         jackpot: 2500
@@ -909,12 +909,12 @@
       gold: {
         cost: 500,
         symbols: [
-          { name: "500 Coins", emoji: "💰", color: "#FFD700", weight: 35, payout: 500 },
-          { name: "2500 Coins", emoji: "💎", color: "#A45CFF", weight: 25, payout: 2500 },
-          { name: "5000 Coins", emoji: "🏆", color: "#FFD700", weight: 8, payout: 5000, isJackpot: true },
+          { name: "750 Coins", emoji: "💰", color: "#FFD700", weight: 35, payout: 750 },
+          { name: "4500 Coins", emoji: "💎", color: "#A45CFF", weight: 25, payout: 4500 },
+          { name: "7000 Coins", emoji: "🏆", color: "#FFD700", weight: 8, payout: 7000, isJackpot: true },
           { name: "Free Spin", emoji: "🎰", color: "#FFD700", weight: 15, payout: 0 }
         ],
-        jackpot: 5000
+        jackpot: 9000
       }
     };
 
@@ -1167,7 +1167,7 @@
       });
       
       // Add XP for playing (win or lose)
-      user.xp += 10;
+      user.xp += 100;
       checkRankUp();
       
       if (totalWin > 0) {
