@@ -363,6 +363,107 @@
       margin-left: 5px;
       font-size: 0.8em;
     }
+    
+    /* Leaderboard styles */
+    .leaderboard-box {
+      background: linear-gradient(135deg, #18203D, #75A439);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 5px 15px rgba(117, 164, 57, 0.5);
+    }
+    
+    .leaderboard-title {
+      color: #FFD700;
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .leaderboard-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .leaderboard-rank {
+      font-weight: bold;
+      color: #FFD700;
+      width: 30px;
+      text-align: center;
+    }
+    
+    .leaderboard-user {
+      flex: 1;
+      margin: 0 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .leaderboard-stats {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    
+    .leaderboard-level {
+      font-weight: bold;
+    }
+    
+    .leaderboard-prestige {
+      font-size: 0.8em;
+      color: #A45CFF;
+    }
+    
+    .leaderboard-you {
+      background: rgba(255, 215, 0, 0.1);
+      border-radius: 5px;
+      padding: 5px;
+    }
+    
+    /* Typing indicator */
+    .typing-indicator {
+      color: #aaa;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+      display: none;
+    }
+    
+    /* Chat timestamp separator */
+    .timestamp-separator {
+      text-align: center;
+      margin: 15px 0;
+      color: #aaa;
+      font-size: 0.8em;
+      position: relative;
+    }
+    
+    .timestamp-separator::before,
+    .timestamp-separator::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .timestamp-separator::before {
+      left: 0;
+    }
+    
+    .timestamp-separator::after {
+      right: 0;
+    }
   </style>
 </head>
 
@@ -477,12 +578,13 @@
 
       <!-- Chat System -->
       <div class="chat-container">
-        <h3 style="color: #75A439; margin-top: 0;">💬 Community Chat</h3>
+        <h3 style="color: #75A439; margin-top: 0;">💬 Global Community Chat</h3>
+        <div class="typing-indicator" id="typing-indicator"></div>
         <div class="chat-messages" id="chat-messages">
           <!-- Messages will be loaded here -->
         </div>
         <div class="chat-input-container">
-          <input type="text" class="chat-input" id="chat-input" placeholder="Type your message...">
+          <input type="text" class="chat-input" id="chat-input" placeholder="Type your message..." autocomplete="off">
           <button class="chat-send-btn" id="chat-send-btn">Send</button>
         </div>
       </div>
@@ -527,6 +629,37 @@
           display: none;
         ">
           🎉 Premium Activated!
+        </div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="leaderboard-box">
+        <h3 class="leaderboard-title">
+          <span style="margin-right: 10px;">🏆</span> Top Players
+        </h3>
+        
+        <ul class="leaderboard-list" id="leaderboard-list">
+          <!-- Loading state -->
+          <li class="leaderboard-item">
+            <div class="leaderboard-rank">-</div>
+            <div class="leaderboard-user">Loading leaderboard...</div>
+            <div class="leaderboard-stats">
+              <div class="leaderboard-level">-</div>
+              <div class="leaderboard-prestige">-</div>
+            </div>
+          </li>
+        </ul>
+        
+        <!-- Current player's rank (shown if not in top 5) -->
+        <div id="your-rank" style="margin-top: 15px; padding: 10px; background: rgba(255, 215, 0, 0.1); border-radius: 5px; display: none;">
+          <div class="leaderboard-item leaderboard-you">
+            <div class="leaderboard-rank">-</div>
+            <div class="leaderboard-user">You</div>
+            <div class="leaderboard-stats">
+              <div class="leaderboard-level">Rank <span id="your-rank-level">1</span></div>
+              <div class="leaderboard-prestige">Prestige <span id="your-prestige">0</span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -653,79 +786,186 @@
       xp: 0,
       prestige: 0,
       multiplier: 1,
-      likedMessages: {}
+      likedMessages: {},
+      isTyping: false,
+      lastTypingTime: 0
     };
 
     // Load user data from Firebase or localStorage
     function loadUserData() {
-  // Check Firebase auth state first
-  auth.onAuthStateChanged(firebaseUser => {
-    if (firebaseUser) {
-      // Clear localStorage when a new user logs in
-      localStorage.removeItem('slotUser');
-      
-      // Load data from Firestore
-      db.collection('users').doc(firebaseUser.uid).get().then(doc => {
-        if (doc.exists) {
-          const firestoreData = doc.data();
-          // Reset user object with default values first
-          user = {
-            coins: 0,
-            premium: false,
-            lastRefresh: null,
-            username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-            rank: 1,
-            xp: 0,
-            prestige: 0,
-            multiplier: 1,
-            likedMessages: {}
-          };
-          // Then merge with Firestore data
-          Object.assign(user, firestoreData);
+      // Check Firebase auth state first
+      auth.onAuthStateChanged(firebaseUser => {
+        if (firebaseUser) {
+          // Clear localStorage when a new user logs in
+          localStorage.removeItem('slotUser');
           
+          // Load data from Firestore
+          db.collection('users').doc(firebaseUser.uid).get().then(doc => {
+            if (doc.exists) {
+              const firestoreData = doc.data();
+              // Reset user object with default values first
+              user = {
+                coins: 0,
+                premium: false,
+                lastRefresh: null,
+                username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                rank: 1,
+                xp: 0,
+                prestige: 0,
+                multiplier: 1,
+                likedMessages: {},
+                isTyping: false,
+                lastTypingTime: 0
+              };
+              // Then merge with Firestore data
+              Object.assign(user, firestoreData);
+              
+              updateUI();
+              checkRefreshCoins();
+              initializeChat();
+              updatePremiumStar();
+              loadLeaderboard();
+              
+              // Load liked messages
+              if (user.likedMessages) {
+                Object.keys(user.likedMessages).forEach(messageId => {
+                  const likeBtn = document.querySelector(`.chat-like-btn[data-id="${messageId}"]`);
+                  if (likeBtn) {
+                    likeBtn.classList.add(user.likedMessages[messageId] === 1 ? 'liked' : 'disliked');
+                  }
+                });
+              }
+            } else {
+              // Create new user document with default values
+              user = {
+                coins: 100, // Starting coins
+                premium: false,
+                lastRefresh: new Date().toISOString(),
+                username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                rank: 1,
+                xp: 0,
+                prestige: 0,
+                multiplier: 1,
+                likedMessages: {},
+                isTyping: false,
+                lastTypingTime: 0
+              };
+              db.collection('users').doc(firebaseUser.uid).set(user);
+            }
+          });
+          
+          document.getElementById('loggedInUsername').textContent = user.username;
+        } else {
+          // Not logged in, use local data (guest mode)
+          const savedUser = localStorage.getItem('slotUser');
+          if (savedUser) {
+            Object.assign(user, JSON.parse(savedUser));
+          }
           updateUI();
           checkRefreshCoins();
-          initializeChat();
-          updatePremiumStar();
-          
-          // Load liked messages
-          if (user.likedMessages) {
-            Object.keys(user.likedMessages).forEach(messageId => {
-              const likeBtn = document.querySelector(`.chat-like-btn[data-id="${messageId}"]`);
-              if (likeBtn) {
-                likeBtn.classList.add(user.likedMessages[messageId] === 1 ? 'liked' : 'disliked');
-              }
-            });
-          }
-        } else {
-          // Create new user document with default values
-          user = {
-            coins: 100, // Starting coins
-            premium: false,
-            lastRefresh: new Date().toISOString(),
-            username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-            rank: 1,
-            xp: 0,
-            prestige: 0,
-            multiplier: 1,
-            likedMessages: {}
-          };
-          db.collection('users').doc(firebaseUser.uid).set(user);
         }
       });
-      
-      document.getElementById('loggedInUsername').textContent = user.username;
-    } else {
-      // Not logged in, use local data (guest mode)
-      const savedUser = localStorage.getItem('slotUser');
-      if (savedUser) {
-        Object.assign(user, JSON.parse(savedUser));
-      }
-      updateUI();
-      checkRefreshCoins();
     }
-  });
+
+    // Load leaderboard data from Firebase
+    function loadLeaderboard() {
+    const leaderboardList = document.getElementById('leaderboard-list');
+    leaderboardList.innerHTML = '<li class="leaderboard-item"><div class="leaderboard-rank">-</div><div class="leaderboard-user">Loading leaderboard...</div><div class="leaderboard-stats"><div class="leaderboard-level">-</div><div class="leaderboard-prestige">-</div></div></li>';
+
+    // Fetch the top 3 players by prestige and rank
+    db.collection('users')
+        .orderBy('prestige', 'desc')
+        .orderBy('rank', 'desc')
+        .limit(3) // Limit to top 3 players
+        .get()
+        .then(snapshot => {
+            leaderboardList.innerHTML = ''; // Clear loading message
+
+            if (snapshot.empty) {
+                leaderboardList.innerHTML = '<li class="leaderboard-item"><div class="leaderboard-user">No players found</div></li>';
+                return;
+            }
+
+            let rank = 1;
+            snapshot.forEach(doc => {
+                const player = doc.data();
+                const item = document.createElement('li');
+                item.className = 'leaderboard-item';
+
+                // Highlight if it's the current user
+                if (auth.currentUser && doc.id === auth.currentUser.uid) {
+                    item.classList.add('leaderboard-you');
+                    document.getElementById('your-rank').style.display = 'none'; // Hide "you" section since they're in top 3
+                }
+
+                item.innerHTML = `
+                    <div class="leaderboard-rank">${rank}</div>
+                    <div class="leaderboard-user">${player.username || 'Anonymous'}</div>
+                    <div class="leaderboard-stats">
+                        <div class="leaderboard-level">Rank ${player.rank || 1}</div>
+                        <div class="leaderboard-prestige">Prestige ${player.prestige || 0}</div>
+                    </div>
+                `;
+
+                leaderboardList.appendChild(item);
+                rank++;
+            });
+
+            // If the current user isn't in the top 3, show their rank separately
+            if (auth.currentUser && !snapshot.docs.some(doc => doc.id === auth.currentUser.uid)) {
+                db.collection('users').doc(auth.currentUser.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const player = doc.data();
+                        document.getElementById('your-rank-level').textContent = player.rank || 1;
+                        document.getElementById('your-prestige').textContent = player.prestige || 0;
+                        document.getElementById('your-rank').style.display = 'block';
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error loading leaderboard:", error);
+            leaderboardList.innerHTML = '<li class="leaderboard-item"><div class="leaderboard-user">Error loading leaderboard</div></li>';
+        });
 }
+
+    // Call this whenever user data changes (after spins, rank ups, etc.)
+    function updateLeaderboard() {
+      if (auth.currentUser) {
+        loadLeaderboard();
+      }
+    }
+
+    // Add this to your existing checkRankUp() function:
+    function checkRankUp() {
+      const xpNeeded = user.rank * 1000;
+      
+      if (user.xp >= xpNeeded && user.rank < 100) {
+        user.xp -= xpNeeded;
+        user.rank++;
+        showAlert(`🎉 Rank Up! You are now Rank ${user.rank}`, "#FFD700");
+        createConfetti(100);
+        
+        // Check if reached max rank for prestige
+        if (user.rank >= 100) {
+          showAlert("🎉 Max Rank Reached! You can now Prestige for a permanent multiplier!", "#A45CFF");
+          document.getElementById('prestige-btn').style.display = 'block';
+        }
+        
+        saveUserData();
+        updateUI();
+        updateLeaderboard(); // Add this line to update leaderboard after rank up
+      }
+    }
+
+    // Also call loadLeaderboard() when initializing the game
+    window.addEventListener('DOMContentLoaded', () => {
+      loadUserData();
+      initializeSlots();
+      loadLeaderboard(); // Add this line
+      
+      // ... rest of your initialization code
+    });
 
     // Update premium star in header
     function updatePremiumStar() {
@@ -765,19 +1005,19 @@
     }
 
     function saveUserData() {
-    // Only save to localStorage if not logged in (guest mode)
-    if (!auth.currentUser) {
-      localStorage.setItem('slotUser', JSON.stringify(user));
+      // Only save to localStorage if not logged in (guest mode)
+      if (!auth.currentUser) {
+        localStorage.setItem('slotUser', JSON.stringify(user));
+      }
+      
+      // Always save to Firestore if logged in
+      if (auth.currentUser) {
+        db.collection('users').doc(auth.currentUser.uid).set(user, { merge: true })
+          .catch(error => {
+            console.error("Error saving user data:", error);
+          });
+      }
     }
-    
-    // Always save to Firestore if logged in
-    if (auth.currentUser) {
-      db.collection('users').doc(auth.currentUser.uid).set(user, { merge: true })
-        .catch(error => {
-          console.error("Error saving user data:", error);
-        });
-    }
-  }
 
     // Update UI with current user data
     function updateUI() {
@@ -830,21 +1070,40 @@
       loadChatMessages();
       
       // Set up real-time listener for new messages
-      db.collection('chat')
+      const chatQuery = db.collection('chat')
         .orderBy('timestamp', 'desc')
-        .limit(50)
-        .onSnapshot(snapshot => {
-          snapshot.docChanges().forEach(change => {
-            if (change.type === 'added') {
-              // Only add if not already present (to avoid duplicates)
-              if (!document.querySelector(`.chat-message[data-id="${change.doc.id}"]`)) {
-                addMessageToChat(change.doc.data(), change.doc.id);
-              }
-            } else if (change.type === 'modified') {
-              // Update likes if message was modified
-              updateMessageLikes(change.doc.id, change.doc.data());
+        .limit(50);
+      
+      chatQuery.onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            // Only add if not already present (to avoid duplicates)
+            if (!document.querySelector(`.chat-message[data-id="${change.doc.id}"]`)) {
+              addMessageToChat(change.doc.data(), change.doc.id);
             }
+          } else if (change.type === 'modified') {
+            // Update likes if message was modified
+            updateMessageLikes(change.doc.id, change.doc.data());
+          }
+        });
+      });
+      
+      // Set up typing indicator listener
+      db.collection('typingIndicators')
+        .where('userId', '!=', auth.currentUser.uid)
+        .onSnapshot(snapshot => {
+          const typingUsers = [];
+          snapshot.forEach(doc => {
+            typingUsers.push(doc.data().username);
           });
+          
+          const typingIndicator = document.getElementById('typing-indicator');
+          if (typingUsers.length > 0) {
+            typingIndicator.textContent = `${typingUsers.join(', ')} ${typingUsers.length > 1 ? 'are' : 'is'} typing...`;
+            typingIndicator.style.display = 'block';
+          } else {
+            typingIndicator.style.display = 'none';
+          }
         });
       
       // Set up message sending
@@ -852,6 +1111,45 @@
       document.getElementById('chat-input').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') sendMessage();
       });
+      
+      // Typing indicator
+      const chatInput = document.getElementById('chat-input');
+      let typingTimeout;
+      
+      chatInput.addEventListener('input', () => {
+        if (!user.isTyping) {
+          user.isTyping = true;
+          updateTypingStatus(true);
+        }
+        
+        user.lastTypingTime = Date.now();
+        
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+          const timeDiff = Date.now() - user.lastTypingTime;
+          if (timeDiff >= 2000 && user.isTyping) {
+            user.isTyping = false;
+            updateTypingStatus(false);
+          }
+        }, 2000);
+      });
+    }
+    
+    // Update typing status in Firestore
+    function updateTypingStatus(isTyping) {
+      if (!auth.currentUser) return;
+      
+      const typingRef = db.collection('typingIndicators').doc(auth.currentUser.uid);
+      
+      if (isTyping) {
+        typingRef.set({
+          userId: auth.currentUser.uid,
+          username: user.username,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } else {
+        typingRef.delete();
+      }
     }
 
     // Update message likes in UI
@@ -870,14 +1168,32 @@
       const chatMessages = document.getElementById('chat-messages');
       chatMessages.innerHTML = '';
       
+      let lastDate = null;
+      
       db.collection('chat')
         .orderBy('timestamp', 'desc')
         .limit(50)
         .get()
         .then(snapshot => {
           snapshot.forEach(doc => {
-            addMessageToChat(doc.data(), doc.id);
+            const message = doc.data();
+            const messageDate = message.timestamp?.toDate() || new Date();
+            const messageDay = messageDate.toDateString();
+            
+            // Add date separator if needed
+            if (lastDate !== messageDay) {
+              const separator = document.createElement('div');
+              separator.className = 'timestamp-separator';
+              separator.textContent = messageDay;
+              chatMessages.appendChild(separator);
+              lastDate = messageDay;
+            }
+            
+            addMessageToChat(message, doc.id);
           });
+          
+          // Scroll to bottom
+          chatMessages.scrollTop = chatMessages.scrollHeight;
         });
     }
 
@@ -893,17 +1209,20 @@
       const likeClass = userLikeStatus === 1 ? 'liked' : (userLikeStatus === -1 ? 'disliked' : '');
       const action = userLikeStatus === 1 ? 'unlike' : 'like';
       
+      const timestamp = message.timestamp?.toDate() || new Date();
+      const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
       messageElement.innerHTML = `
         <span class="chat-username">${message.username}</span>
         ${message.text}
-        <span class="chat-timestamp">${new Date(message.timestamp?.toDate() || new Date()).toLocaleTimeString()}</span>
+        <span class="chat-timestamp">${timeString}</span>
         <button class="chat-like-btn ${likeClass}" data-id="${id}" data-action="${action}">
           ❤️ ${message.likes || 0}
         </button>
       `;
       
       // Add to top of chat (newest messages at bottom)
-      chatMessages.insertBefore(messageElement, chatMessages.firstChild);
+      chatMessages.appendChild(messageElement);
       
       // Scroll to bottom to see new messages
       chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -918,6 +1237,10 @@
         showAlert("You must be logged in to chat", "#FF6B6B");
         return;
       }
+      
+      // Clear typing indicator
+      user.isTyping = false;
+      updateTypingStatus(false);
       
       const message = {
         username: user.username,
@@ -1306,6 +1629,7 @@
       
       saveUserData();
       updateUI();
+      loadLeaderboard(); // Update leaderboard after win
     }
     
     // Check if user can rank up
@@ -1326,6 +1650,7 @@
         
         saveUserData();
         updateUI();
+        loadLeaderboard(); // Update leaderboard after rank up
       }
     }
     
@@ -1382,6 +1707,7 @@
         user.xp = 0;
         saveUserData();
         updateUI();
+        loadLeaderboard(); // Update leaderboard after prestige
         
         showAlert(`🎉 Prestige ${user.prestige} achieved! Your multiplier is now ${user.multiplier}x`, "#A45CFF");
         createConfetti(200);

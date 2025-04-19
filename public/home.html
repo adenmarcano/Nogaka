@@ -11,355 +11,711 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+  <style>
+    /* Base Styles */
+    body {
+      background-color: #18203D;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
+    }
+
+    .main-container {
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Section Styling */
+    .page-section {
+      padding: 30px 20px;
+      background-color: #18203D;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: #75A439;
+      text-align: center;
+    }
+
+    .section-subtitle {
+      font-size: 1.25rem;
+      text-align: center;
+      margin-bottom: 15px;
+      color: #aaa;
+    }
+
+    /* Welcome Section */
+    .welcome-section {
+      text-align: center;
+      padding: 30px 20px 20px;
+      min-height: 40vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .welcome-title {
+      font-size: 3.5rem;
+      margin-bottom: 10px;
+      color: #ffffff;
+    }
+
+    .welcome-highlight {
+      color: #75A439;
+      font-weight: bold;
+    }
+
+    .welcome-text {
+      font-size: 1.2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      color: #ccc;
+    }
+
+    /* Features Section */
+    .features-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .feature-card {
+      background-color: #177E9D;
+      padding: 15px;
+      border-radius: 8px;
+      flex: 1;
+      min-width: 350px;
+      max-width: 400px;
+      height: 250px;
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .feature-content h3 {
+      font-size: 1.75rem;
+      margin-bottom: 5px;
+      color: #fff;
+      text-align: center;
+    }
+
+    .feature-content p {
+      font-size: 1rem;
+      color: #eee;
+      text-align: center;
+    }
+
+    /* Comments Section */
+    .comments-container {
+      margin-top: 15px;
+    }
+
+    .comment {
+      background-color: #1A2A3A;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      size: 2.5rem;
+    }
+
+    .comment-user {
+      font-size: 1rem;
+      color: #75A439;
+      font-weight: bold;
+    }
+
+    .comment-time {
+      font-size: 0.8rem;
+      color: #777;
+    }
+
+    .comment-text {
+      font-size: 0.95rem;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    .vote-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .vote-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #aaa;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .vote-button:hover {
+      transform: scale(1.1);
+    }
+
+    .like-button.active {
+      color: #75A439;
+    }
+
+    .dislike-button.active {
+      color: #D32F2F;
+    }
+
+    .comment-form {
+      background-color: #1A2A3A;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+
+    .comment-form-title {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #75A439;
+    }
+
+    #new-comment {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #177E9D;
+      background-color: #18203D;
+      color: #fff;
+      min-height: 80px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      resize: vertical;
+    }
+
+    #submit-comment {
+      background-color: #75A439;
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background-color 0.3s;
+    }
+
+    #submit-comment:hover {
+      background-color: #5d8a2e;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .page-section {
+        padding: 20px 15px;
+      }
+      
+      .welcome-title {
+        font-size: 2rem;
+      }
+      
+      .welcome-text {
+        font-size: 1rem;
+      }
+      
+      .feature-card {
+        min-width: 100%;
+      }
+    }
+
+    .comment.hidden {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease;
+  }
+  
+  .comment.visible {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .show-more-button {
+    background-color: #1A2A3A;
+    color: #75A439;
+    border: 1px solid #75A439;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 20px auto;
+    display: block;
+    transition: all 0.3s;
+  }
+  
+  .show-more-button:hover {
+    background-color: #75A439;
+    color: #fff;
+  }
+  
+  .show-more-button i {
+    margin-left: 5px;
+    transition: transform 0.3s;
+  }
+  
+  .show-more-button.active i {
+    transform: rotate(180deg);
+  }
+  </style>
 </head>
 
-<body style="background-color: #000000; color: #fff;">
+<body>
   <!-- Header Include -->
   <div id="header-container"></div>
 
   <!-- Main Content -->
-  <main class="container" style="background-color: #18203D; padding: 20px; max-width: 93%; border-radius: 10px;">
-
-    <section class="hero" style="text-align: center; padding: 40px;">
-      <h1>Welcome to <span class="highlight" style="color: #75A439;">Nogaka</span></h1>
-      <p>Your ultimate portal to the anime & manga multiverse.</p>
+  <div class="main-container">
+    <!-- Section 1: Welcome -->
+    <section class="page-section welcome-section">
+      <h1 class="welcome-title">Welcome to <span class="welcome-highlight">Nogaka</span></h1>
+      <p class="welcome-text">Your ultimate portal to the anime & manga multiverse.</p>
     </section>
 
-    <section class="features" style="display: flex; justify-content: space-around; margin-top: 40px;">
-      <div class="feature-card" style="background-color: #177E9D; padding: 20px; border-radius: 8px; color: #fff; text-align: center; width: 30%;">
-        <i class="fas fa-fire" style="font-size: 40px;"></i>
-        <h3>Trending Now</h3>
-        <p>See what's hot in the anime and manga scene—updated daily!</p>
-      </div>
-      <div class="feature-card" style="background-color: #177E9D; padding: 20px; border-radius: 8px; color: #fff; text-align: center; width: 30%;">
-        <i class="fas fa-heart" style="font-size: 40px;"></i>
-        <h3>Personalized Picks</h3>
-        <p>Get manga and anime suggestions based on your current vibe.</p>
-      </div>
-      <div class="feature-card" style="background-color: #177E9D; padding: 20px; border-radius: 8px; color: #fff; text-align: center; width: 30%;">
-        <i class="fas fa-users" style="font-size: 40px;"></i>
-        <h3>Community Driven</h3>
-        <p>Join discussions, drop reviews, and share your favorite moments.</p>
-      </div>
-    </section>
-
-    <!-- Comment Section -->
-    <section class="comments-section" style="margin-top: 40px; color: #fff;">
-      <h2 style="color: #75A439;">Community Comments</h2>
-      <div id="comments-container" style="margin-bottom: 20px;">
-        <!-- Comments will be injected here -->
-        <!-- Fallback comments in case accounts.html fails to load -->
-        <div class="comment">
-          <strong>animeFan123</strong><br/>
-          <p>This site is amazing, I love the anime recommendations!</p>
-          <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
-            Like <span class="like-count">0</span>
-          </button>
+    <!-- Section 2: Features -->
+    <section class="page-section">
+      <h2 class="section-title">Explore Our Features</h2>
+      <p class="section-subtitle">Discover what makes Nogaka special</p>
+      
+      <div class="features-container">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-fire"></i>
+          </div>
+          <div class="feature-content">
+            <h3>Trending Now</h3>
+            <p>See what's hot in the anime and manga scene updated daily.</p>
+          </div>
         </div>
-        <div class="comment">
-          <strong>mangaMaster</strong><br/>
-          <p>Great content, I found so many new manga series!</p>
-          <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
-            Like <span class="like-count">0</span>
-          </button>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-heart"></i>
+          </div>
+          <div class="feature-content">
+            <h3>Personalized Picks</h3>
+            <p>Get manga and anime suggestions tailored to your tastes.</p>
+          </div>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="feature-content">
+            <h3>Community Driven</h3>
+            <p>Join discussions and share reviews with other fans.</p>
+          </div>
         </div>
       </div>
-      <textarea id="new-comment" placeholder="Add your comment..." style="width: 100%; padding: 12px 20px; margin-top: 10px; border-radius: 5px; border: 1px solid #177E9D; background-color: #18203D; color: #fff;"></textarea>
-      <button id="submit-comment" class="cta-button" style="background-color: #75A439; color: #fff; padding: 12px 20px; border-radius: 5px; margin-top: 10px;">Submit Comment</button>
     </section>
-  </main>
 
-  <!-- Footer Include -->
-  <div id="footer-container"></div>
+    <!-- Section 3: Comments -->
+    <section class="page-section">
+      <h2 class="section-title">Community Comments</h2>
+      <p class="section-subtitle">Join the conversation</p>
+      
+      <div class="comments-container" id="comments-container">
+        <!-- Comments will be loaded dynamically from Firebase -->
+      </div>
+      
+      <button id="show-more-comments" class="show-more-button" style="display: none;">
+        Show More Comments <i class="fas fa-chevron-down"></i>
+      </button>
+      
+      <div class="comment-form">
+        <h3 class="comment-form-title">Add Your Comment</h3>
+        <textarea id="new-comment" placeholder="Share your thoughts with the community..."></textarea>
+        <button id="submit-comment" class="cta-button">Post Comment</button>
+      </div>
+    </section>
 
-  <script src="firebaseConfig.js"></script>
-  
-  <script>
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+    <script src="firebaseConfig.js"></script>
 
-    // Load Header
-    fetch('header.html')
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById('header-container').innerHTML = data;
-        setTimeout(initHeaderScripts, 200); // Ensures header elements exist first
-      })
-      .catch(error => console.error("Error loading header:", error));
+    <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    // Header interactions (runs after header loads)
-    function initHeaderScripts() {
-        console.log("Header script initialized");
-        const accountBtn = document.getElementById('accountBtn');
-        const dropdownContent = document.getElementById('dropdownContent');
-        const accountBtnText = document.getElementById('accountBtnText');
-        const accountDropdown = document.querySelector('.user-dropdown');
+    const commentsRef = db.collection('chat');
 
-        if (accountBtn && dropdownContent && accountBtnText) {
-            console.log("Account button and dropdown found");
+    const userVotes = {};
+    let allComments = [];
+    let visibleCommentCount = 3;
 
-            accountBtn.addEventListener('click', () => {
-                accountDropdown.classList.toggle('active');
-            });
-
-            // Check Firebase authentication state
-            auth.onAuthStateChanged(user => {
-                console.log("Auth state changed:", user);
-
-                if (user) {
-                    // Fetch user data from Firestore
-                    db.collection('users').doc(user.uid).get().then((doc) => {
-                        if (doc.exists) {
-                            const userData = doc.data();
-                            const userName = userData.username || user.email;
-                            accountBtnText.textContent = userName;
-                            
-                            // Update premium star if user has premium
-                            updatePremiumStar(doc.data().premium || false);
-                            
-                            dropdownContent.innerHTML = `
-                            <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
-                            <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
-                            <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
-                            `;
-
-                            document.getElementById('signOutLink').addEventListener('click', (e) => {
-                                e.preventDefault();
-                                auth.signOut().then(() => {
-                                    console.log("User signed out");
-                                    dropdownContent.style.display = "none";
-                                    accountBtnText.textContent = "Account";
-                                    window.location.reload();
-                                });
-                            });
-                        }
-                    });
-                } else {
-                    dropdownContent.innerHTML = `
-                    <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
-                    <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
-                    <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
-                    `;
-                    accountBtnText.textContent = "Account";
-                    // Remove premium star if present
-                    updatePremiumStar(false);
-                }
-            });
-
-            document.addEventListener("click", (event) => {
-                if (!accountDropdown.contains(event.target)) {
-                    accountDropdown.classList.remove("active");
-                }
-            });
-        } else {
-            console.error("Dropdown elements not found, check header.html structure.");
-        }
+    function formatTime(timestamp) {
+      if (!timestamp) return 'just now';
+      
+      const now = new Date();
+      const commentTime = timestamp.toDate();
+      const diffInSeconds = Math.floor((now - commentTime) / 1000);
+      
+      if (diffInSeconds < 60) return 'just now';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
     }
 
-    // Function to update premium star in header
-    function updatePremiumStar(isPremium) {
-        const accountBtnText = document.getElementById('accountBtnText');
-        if (accountBtnText) {
-            const star = accountBtnText.querySelector('.premium-star');
-            if (isPremium) {
-                if (!star) {
-                    const starElement = document.createElement('span');
-                    starElement.className = 'premium-star';
-                    starElement.innerHTML = ' ⭐';
-                    accountBtnText.appendChild(starElement);
-                }
-            } else if (star) {
-                star.remove();
-            }
-        }
-    }
-
-    // Load Footer
-    fetch('footer.html')
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById('footer-container').innerHTML = data;
-        initFooterScripts();
-      })
-      .catch(error => console.error("Error loading footer:", error));
-
-    // Submit a new comment
-    document.getElementById('submit-comment').addEventListener('click', () => {
-      const commentText = document.getElementById('new-comment').value;
-      if (commentText) {
-        const newComment = document.createElement('div');
-        newComment.classList.add('comment');
-        newComment.innerHTML = `
-          <strong>${firebase.auth().currentUser ? firebase.auth().currentUser.displayName || 'User' : 'Guest'}</strong><br/>
-          <p>${commentText}</p>
-          <button class="like-button" style="background-color: #75A439; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">
-            Like <span class="like-count">0</span>
+    // Function to create a comment element
+    function createCommentElement(commentData, index) {
+      const commentElement = document.createElement('div');
+      commentElement.className = `comment ${index >= visibleCommentCount ? 'hidden' : 'visible'}`;
+      commentElement.dataset.commentId = commentData.id;
+      
+      commentElement.innerHTML = `
+        <div class="comment-header">
+          <span class="comment-user">${commentData.username || 'Anonymous'}</span>
+          <span class="comment-time">${formatTime(commentData.timestamp)}</span>
+        </div>
+        <p class="comment-text">${commentData.text}</p>
+        <div class="vote-buttons">
+          <button class="vote-button like-button" data-comment-id="${commentData.id}">
+            <i class="fas fa-thumbs-up"></i> <span class="like-count">${commentData.likes || 0}</span>
           </button>
-        `;
-        document.getElementById('comments-container').appendChild(newComment);
-        document.getElementById('new-comment').value = '';
+          <button class="vote-button dislike-button" data-comment-id="${commentData.id}">
+            <i class="fas fa-thumbs-down"></i> <span class="dislike-count">${commentData.dislikes || 0}</span>
+          </button>
+        </div>
+      `;
+      
+      return commentElement;
+    }
 
-        // Attach like functionality to new comment
-        const likeButton = newComment.querySelector('.like-button');
-        const likeCount = newComment.querySelector('.like-count');
-        let likes = 0;
-
-        likeButton.addEventListener('click', () => {
-          likes++;
-          likeCount.textContent = likes;
-          likeButton.style.backgroundColor = '#177E9D';
+    // Function to load and display comments
+    function loadComments() {
+      commentsRef.orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+        const commentsContainer = document.getElementById('comments-container');
+        const showMoreButton = document.getElementById('show-more-comments');
+        commentsContainer.innerHTML = '';
+        allComments = [];
+        
+        snapshot.forEach(doc => {
+          const commentData = doc.data();
+          commentData.id = doc.id;
+          allComments.push(commentData);
         });
-      }
-    });
-
-    // Initialize like buttons for existing comments
-    function initLikeButtons() {
-      document.querySelectorAll('.like-button').forEach(button => {
-        const likeCount = button.querySelector('.like-count');
-        let likes = 0;
-
-        button.addEventListener('click', () => {
-          likes++;
-          likeCount.textContent = likes;
-          button.style.backgroundColor = '#177E9D';
+        
+        // Only show the button if there are more than 3 comments
+        if (allComments.length > visibleCommentCount) {
+          showMoreButton.style.display = 'block';
+        } else {
+          showMoreButton.style.display = 'none';
+        }
+        
+        // Render all comments (but only show the first few)
+        allComments.forEach((commentData, index) => {
+          const commentElement = createCommentElement(commentData, index);
+          commentsContainer.appendChild(commentElement);
+          initVoteButtons(commentElement);
         });
       });
     }
 
-    // Footer interactions
-    function initFooterScripts() {
-      const copyright = document.querySelector('.footer-bottom p');
-      if (copyright) {
-        const year = new Date().getFullYear();
-        copyright.innerHTML = `&copy; ${year} Nogaka. All rights reserved.`;
+    function showMoreComments() {
+      const hiddenComments = document.querySelectorAll('.comment.hidden');
+      const showMoreButton = document.getElementById('show-more-comments');
+      
+      // Determine how many to show (either 3 more or all remaining)
+      const nextVisibleCount = Math.min(visibleCommentCount + 3, allComments.length);
+      
+      // Show the next batch of comments with fade-in animation
+      for (let i = visibleCommentCount; i < nextVisibleCount; i++) {
+        const comment = document.querySelector(`.comment[data-comment-id="${allComments[i].id}"]`);
+        if (comment) {
+          comment.classList.remove('hidden');
+          setTimeout(() => {
+            comment.classList.add('visible');
+          }, 50 * (i - visibleCommentCount));
+        }
+      }
+      
+      visibleCommentCount = nextVisibleCount;
+      
+      // Hide the button if we've shown all comments
+      if (visibleCommentCount >= allComments.length) {
+        showMoreButton.style.display = 'none';
       }
     }
 
-    // Run when page loads
-    document.addEventListener('DOMContentLoaded', () => {
-      initLikeButtons();
+    // Initialize voting buttons
+    function initVoteButtons(commentElement) {
+      const commentId = commentElement.dataset.commentId;
+      const likeButton = commentElement.querySelector('.like-button');
+      const dislikeButton = commentElement.querySelector('.dislike-button');
+      const likeCount = commentElement.querySelector('.like-count');
+      const dislikeCount = commentElement.querySelector('.dislike-count');
+      
+      // Get user ID (or use 'guest' for anonymous users)
+      const userId = auth.currentUser ? auth.currentUser.uid : 'guest';
+      
+      // Initialize votes tracking for this comment
+      if (!userVotes[commentId]) {
+        userVotes[commentId] = {};
+      }
+      
+      likeButton.addEventListener('click', async () => {
+        if (!auth.currentUser) {
+          alert('Please sign in to vote');
+          return;
+        }
+        
+        const commentRef = commentsRef.doc(commentId);
+        const commentDoc = await commentRef.get();
+        
+        if (!commentDoc.exists) return;
+        
+        const currentLikes = commentDoc.data().likes || 0;
+        const currentDislikes = commentDoc.data().dislikes || 0;
+        
+        if (userVotes[commentId][userId] === 'like') {
+          // User already liked - remove like
+          await commentRef.update({
+            likes: currentLikes - 1
+          });
+          userVotes[commentId][userId] = null;
+          likeButton.classList.remove('active');
+        } else if (userVotes[commentId][userId] === 'dislike') {
+          // User is switching from dislike to like
+          await commentRef.update({
+            likes: currentLikes + 1,
+            dislikes: currentDislikes - 1
+          });
+          userVotes[commentId][userId] = 'like';
+          likeButton.classList.add('active');
+          dislikeButton.classList.remove('active');
+        } else {
+          // New like
+          await commentRef.update({
+            likes: currentLikes + 1
+          });
+          userVotes[commentId][userId] = 'like';
+          likeButton.classList.add('active');
+        }
+      });
+      
+      dislikeButton.addEventListener('click', async () => {
+        if (!auth.currentUser) {
+          alert('Please sign in to vote');
+          return;
+        }
+        
+        const commentRef = commentsRef.doc(commentId);
+        const commentDoc = await commentRef.get();
+        
+        if (!commentDoc.exists) return;
+        
+        const currentLikes = commentDoc.data().likes || 0;
+        const currentDislikes = commentDoc.data().dislikes || 0;
+        
+        if (userVotes[commentId][userId] === 'dislike') {
+          // User already disliked - remove dislike
+          await commentRef.update({
+            dislikes: currentDislikes - 1
+          });
+          userVotes[commentId][userId] = null;
+          dislikeButton.classList.remove('active');
+        } else if (userVotes[commentId][userId] === 'like') {
+          // User is switching from like to dislike
+          await commentRef.update({
+            likes: currentLikes - 1,
+            dislikes: currentDislikes + 1
+          });
+          userVotes[commentId][userId] = 'dislike';
+          dislikeButton.classList.add('active');
+          likeButton.classList.remove('active');
+        } else {
+          // New dislike
+          await commentRef.update({
+            dislikes: currentDislikes + 1
+          });
+          userVotes[commentId][userId] = 'dislike';
+          dislikeButton.classList.add('active');
+        }
+      });
+    }
+
+    // Submit a new comment
+    document.getElementById('submit-comment').addEventListener('click', async () => {
+      const commentText = document.getElementById('new-comment').value.trim();
+      
+      if (!commentText) {
+        alert('Please enter a comment');
+        return;
+      }
+      
+      if (!auth.currentUser) {
+        alert('Please sign in to post a comment');
+        return;
+      }
+      
+      try {
+        // Get user data
+        const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+        const username = userDoc.exists && userDoc.data().username 
+          ? userDoc.data().username 
+          : auth.currentUser.email.split('@')[0];
+        
+        // Add comment to Firestore
+        await commentsRef.add({
+          text: commentText,
+          username: username,
+          userId: auth.currentUser.uid,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          likes: 0,
+          dislikes: 0
+        });
+        
+        // Clear the comment input
+        document.getElementById('new-comment').value = '';
+        
+        // Reset to show only the latest comments
+        visibleCommentCount = 3;
+        loadComments();
+      } catch (error) {
+        console.error('Error posting comment:', error);
+        alert('Error posting comment. Please try again.');
+      }
     });
-  </script>
 
-  <style>
-    body {
-      background-color: var(--bg-dark);
-      color: var(--text-light);
-      line-height: 1.6;
-      background-image: 
-        radial-gradient(circle at 25% 25%, rgba(117, 164, 57, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(22, 125, 157, 0.15) 0%, transparent 50%),
-        linear-gradient(135deg, #121212 0%, #1a1a2e 100%);
-      background-attachment: fixed;
-    }
+    // Show more comments when button is clicked
+    document.getElementById('show-more-comments').addEventListener('click', showMoreComments);
 
-    /* Comments Section Styles */
-    .comments-section {
-      margin-top: 40px;
-    }
+    // Initialize the comments when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      loadComments();
+    });
 
-    .comments-section h2 {
-      font-size: 24px;
-      margin-bottom: 15px;
-      color: #75A439;
-    }
+    document.addEventListener('DOMContentLoaded', () => {
 
-    .comment {
-      background-color: #18203D;
-      padding: 12px;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      color: #fff;
-    }
+    // Load Header
+    fetch('header.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('header-container').innerHTML = data;
+            setTimeout(initHeaderScripts, 200);
+        })
+        .catch(error => console.error("Error loading header:", error));
+        
+        // Header interactions
+        function initHeaderScripts() {
+            console.log("Header script initialized");
+            const accountBtn = document.getElementById('accountBtn');
+            const dropdownContent = document.getElementById('dropdownContent');
+            const accountBtnText = document.getElementById('accountBtnText');
+            const accountDropdown = document.querySelector('.user-dropdown');
 
-    .comment strong {
-      font-weight: bold;
-      color: #75A439;
-    }
+            if (accountBtn && dropdownContent && accountBtnText) {
+                console.log("Account button and dropdown found");
 
-    .comments-section textarea {
-      width: 100%;
-      padding: 12px 20px;
-      margin-top: 10px;
-      border-radius: 5px;
-      border: 1px solid #177E9D;
-      background-color: #18203D;
-      color: #fff;
-    }
+                accountBtn.addEventListener('click', () => {
+                    accountDropdown.classList.toggle('active');
+                });
 
-    .comments-section button {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 12px 20px;
-      background-color: #75A439;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-    }
+                // Check Firebase authentication state
+                auth.onAuthStateChanged(user => {
+                    console.log("Auth state changed:", user);
 
-    .comments-section button:hover {
-      background-color: #177E9D;
-    }
+                    if (user) {
+                        // Fetch user data from Firestore
+                        db.collection('users').doc(user.uid).get().then((doc) => {
+                            if (doc.exists) {
+                                const userData = doc.data();
+                                const userName = userData.username || user.email;
+                                accountBtnText.textContent = userName;
+                                
+                                // Update premium star if user has premium
+                                updatePremiumStar(doc.data().premium || false);
+                                
+                                dropdownContent.innerHTML = `
+                                <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                                <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
+                                <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                                `;
 
-    .like-button {
-      background-color: #75A439;
-      color: white;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+                                document.getElementById('signOutLink').addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    auth.signOut().then(() => {
+                                        console.log("User signed out");
+                                        dropdownContent.style.display = "none";
+                                        accountBtnText.textContent = "Account";
+                                        window.location.reload();
+                                    });
+                                });
+                            }
+                        });
+                    } else {
+                        dropdownContent.innerHTML = `
+                        <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+                        <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
+                        <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                        `;
+                        accountBtnText.textContent = "Account";
+                        updatePremiumStar(false);
+                    }
+                });
 
-    .like-button:hover {
-      background-color: #177E9D;
-    }
+                document.addEventListener("click", (event) => {
+                    if (!accountDropdown.contains(event.target)) {
+                        accountDropdown.classList.remove("active");
+                    }
+                });
+            } else {
+                console.error("Dropdown elements not found, check header.html structure.");
+            }
+        }
 
-    .like-count {
-      margin-left: 5px;
-    }
+        // Function to update premium star in header
+        function updatePremiumStar(isPremium) {
+            const accountBtnText = document.getElementById('accountBtnText');
+            if (accountBtnText) {
+                const star = accountBtnText.querySelector('.premium-star');
+                if (isPremium) {
+                    if (!star) {
+                        const starElement = document.createElement('span');
+                        starElement.className = 'premium-star';
+                        starElement.innerHTML = ' ⭐';
+                        accountBtnText.appendChild(starElement);
+                    }
+                } else if (star) {
+                    star.remove();
+                }
+            }
+        }
 
-    /* User Dropdown Styles */
-    .user-dropdown {
-      position: relative;
-    }
+    // Load footer
+    fetch('footer.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('footer-container').innerHTML = data;
+        })
+        .catch(error => console.error('Error loading footer:', error));
 
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #1a1a2e;
-      min-width: 200px;
-      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.3);
-      border-radius: 10px;
-      z-index: 1000;
-      padding: 10px;
-    }
+    // Load comments
+    loadComments();
+});
 
-    .dropdown-content a {
-      color: #e0e0e0;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: block;
-      font-size: 14px;
-      transition: all 0.3s ease;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #16213e;
-      color: #75A439;
-    }
-
-    .user-dropdown.active .dropdown-content {
-      display: block;
-    }
-
-    .premium-star {
-      color: gold;
-      margin-left: 5px;
-      font-size: 0.8em;
-    }
-  </style>
+    </script>
 </body>
 </html>
