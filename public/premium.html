@@ -664,62 +664,75 @@
 
     // Load user data from Firebase or localStorage
     function loadUserData() {
-      // Check Firebase auth state first
-      auth.onAuthStateChanged(firebaseUser => {
-        if (firebaseUser) {
-          // Clear localStorage when a new user logs in
-          localStorage.removeItem('slotUser');
-          
-          // Load data from Firestore
-          db.collection('users').doc(firebaseUser.uid).get().then(doc => {
-            if (doc.exists) {
-              const firestoreData = doc.data();
-              // Reset user object with default values first
-              user = {
-                coins: 0,
-                premium: false,
-                lastRefresh: null,
-                username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-                rank: 1,
-                xp: 0,
-                prestige: 0,
-                multiplier: 1
-              };
-              // Then merge with Firestore data
-              Object.assign(user, firestoreData);
-              
-              updateUI();
-              checkRefreshCoins();
-              updatePremiumStar();
-              loadLeaderboard();
-            } else {
-              // Create new user document with default values
-              user = {
-                coins: 100, // Starting coins
-                premium: false,
-                lastRefresh: new Date().toISOString(),
-                username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-                rank: 1,
-                xp: 0,
-                prestige: 0,
-                multiplier: 1
-              };
-              db.collection('users').doc(firebaseUser.uid).set(user);
-            }
-          });
-          
-          document.getElementById('loggedInUsername').textContent = user.username;
-        } else {
-          // Not logged in, use local data (guest mode)
-          const savedUser = localStorage.getItem('slotUser');
-          if (savedUser) {
-            Object.assign(user, JSON.parse(savedUser));
+    // Check Firebase auth state first
+    auth.onAuthStateChanged(firebaseUser => {
+      if (firebaseUser) {
+        // Clear localStorage when a new user logs in
+        localStorage.removeItem('slotUser');
+        
+        // Load data from Firestore
+        db.collection('users').doc(firebaseUser.uid).get().then(doc => {
+          if (doc.exists) {
+            const firestoreData = doc.data();
+            // Reset user object with default values first
+            user = {
+              coins: 0,
+              premium: false,
+              lastRefresh: null,
+              username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              rank: 1,
+              xp: 0,
+              prestige: 0,
+              multiplier: 1
+            };
+            // Then merge with Firestore data
+            Object.assign(user, firestoreData);
+            
+            updateUI();
+            checkRefreshCoins(); // Give coins on every load
+            updatePremiumStar();
+            loadLeaderboard();
+          } else {
+            // Create new user document with default values
+            user = {
+              coins: 100, // Starting coins
+              premium: false,
+              lastRefresh: null,
+              username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              rank: 1,
+              xp: 0,
+              prestige: 0,
+              multiplier: 1
+            };
+            db.collection('users').doc(firebaseUser.uid).set(user);
+            checkRefreshCoins(); // Give coins for new user
           }
-          updateUI();
-          checkRefreshCoins();
+        });
+        
+        document.getElementById('loggedInUsername').textContent = user.username;
+      } else {
+        // Not logged in, use local data (guest mode)
+        const savedUser = localStorage.getItem('slotUser');
+        if (savedUser) {
+          Object.assign(user, JSON.parse(savedUser));
+        } else {
+          // Initialize new guest user with starting coins
+          user = {
+            coins: 100,
+            premium: false,
+            lastRefresh: null,
+            username: "Guest",
+            rank: 1,
+            xp: 0,
+            prestige: 0,
+            multiplier: 1
+          };
         }
-      });
-    }
+        updateUI();
+        checkRefreshCoins(); // Give coins on every load
+      }
+    });
+  }
 
     // Load leaderboard data from Firebase
     function loadLeaderboard() {
@@ -803,23 +816,16 @@
 
     // Check and give refresh coins if eligible
     function checkRefreshCoins() {
-      const now = new Date();
-      const lastRefresh = user.lastRefresh ? new Date(user.lastRefresh) : null;
-      
-      // Only give coins if last refresh was more than 1 hour ago or never
-      if (!lastRefresh || (now - lastRefresh) > 3600000) {
-        const baseCoins = user.premium ? 200 : 100;
-        const refreshCoins = baseCoins * user.multiplier;
-        
-        user.coins += refreshCoins;
-        user.lastRefresh = now.toISOString();
-        
-        showAlert(`+${refreshCoins} coins added for refreshing the page!`, "#75A439");
-        saveUserData();
-        updateUI();
-      }
-    }
-
+  const baseCoins = user.premium ? 200 : 100;
+  const refreshCoins = baseCoins * user.multiplier;
+  
+  user.coins += refreshCoins;
+  user.lastRefresh = new Date().toISOString();
+  
+  showAlert(`+${refreshCoins} coins added for refreshing the page!`, "#75A439");
+  saveUserData();
+  updateUI();
+}
     function saveUserData() {
       // Only save to localStorage if not logged in (guest mode)
       if (!auth.currentUser) {
