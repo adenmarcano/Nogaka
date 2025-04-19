@@ -204,8 +204,8 @@
 
     <!-- LOGIN -->
     <form id="loginForm" class="active">
-      <label for="loginUser">Email</label>
-      <input type="email" id="loginUser" required />
+      <label for="loginUsername">Username</label>
+      <input type="text" id="loginUsername" required />
 
       <label for="loginPass">Password</label>
       <input type="password" id="loginPass" required />
@@ -257,28 +257,44 @@
     // Login handler
     document.getElementById('loginForm').addEventListener('submit', async function (e) {
         e.preventDefault();
-        const email = document.getElementById('loginUser').value.trim();
+        const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPass').value;
 
         try {
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-        
-        // Fetch user data from Firestore
-        const userDoc = await db.collection('users').doc(user.uid).get();
-        const userData = userDoc.data();
-        
-        messageBox.textContent = `Welcome back, ${userData.username}!`;
-        messageBox.className = 'message success';
-        
-        // No need to manually store user data, Firebase Auth handles it
-        setTimeout(() => window.location.href = 'home.html', 1500);
-    } catch (error) {
-        messageBox.textContent = 'Invalid email or password.';
-        messageBox.className = 'message error';
-        console.error(error);
-    }
-});
+            // First, look up the user's email in Firestore using their username
+            const usersRef = db.collection('users');
+            const querySnapshot = await usersRef.where('username', '==', username).get();
+            
+            if (querySnapshot.empty) {
+                messageBox.textContent = 'Invalid username or password.';
+                messageBox.className = 'message error';
+                return;
+            }
+            
+            // Get the first matching user (assuming usernames are unique)
+            const userDoc = querySnapshot.docs[0];
+            const userData = userDoc.data();
+            const email = userData.email;
+            
+            // Sign in with email and password
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            
+            // Update last login time
+            await db.collection('users').doc(user.uid).update({
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            messageBox.textContent = `Welcome back, ${username}!`;
+            messageBox.className = 'message success';
+            
+            setTimeout(() => window.location.href = 'home.html', 1500);
+        } catch (error) {
+            messageBox.textContent = 'Invalid username or password.';
+            messageBox.className = 'message error';
+            console.error(error);
+        }
+    });
 
     // Register handler
     document.getElementById('registerForm').addEventListener('submit', async function (e) {
@@ -295,6 +311,14 @@
       }
 
       try {
+        // Check if username already exists
+        const usernameCheck = await db.collection('users').where('username', '==', username).get();
+        if (!usernameCheck.empty) {
+          messageBox.textContent = 'Username already exists.';
+          messageBox.className = 'message error';
+          return;
+        }
+
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
 

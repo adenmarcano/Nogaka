@@ -535,6 +535,113 @@
             -webkit-backdrop-filter: blur(8px);
         }
 
+        /* Advert Popup Styles */
+        .advert-popup {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 300px; /* Increased from 250px */
+            height: 400px; /* Added fixed height */
+            background: rgba(24, 32, 61, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border: 1px solid var(--teal);
+            z-index: 1000;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.5s ease;
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column; /* Stack children vertically */
+        }
+
+        .advert-popup.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .advert-popup.hide {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        .advert-header {
+            background: var(--dark-purple);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        .advert-title {
+            color: var(--text-lighter);
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .close-advert {
+            color: var(--text-gray);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-advert:hover {
+            color: var(--text-lighter);
+        }
+
+        .advert-content {
+            padding: 0; /* Remove padding */
+            text-align: center;
+            flex: 1; /* Take up remaining space */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .advert-gif {
+            width: 100%;
+            height: 50%;
+            object-fit: cover; /* Maintain aspect ratio while filling container */
+            border-radius: 0; /* Remove border radius to fill popup */
+            margin-bottom: 0; /* Remove margin */
+            cursor: pointer;
+        }
+
+        .advert-text {
+            font-size: 0.8em;
+            color: var(--text-gray);
+            padding: 10px;
+            flex-shrink: 0; /* Prevent text from shrinking */
+            background: rgba(0,0,0,0.5); /* Semi-transparent background */
+            position: absolute;
+            bottom: 40px; /* Position above button */
+            left: 0;
+            right: 0;
+        }
+
+        .advert-link {
+            display: inline-block;
+            padding: 8px 15px;
+            background: var(--green);
+            color: var(--dark-blue);
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.8em;
+            text-decoration: none;
+            transition: all 0.3s;
+            margin: 10px;
+            flex-shrink: 0; /* Prevent button from shrinking */
+            position: relative;
+            z-index: 1;
+        }
+
+
+        .advert-link:hover {
+            background: var(--teal);
+            color: white;
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .main-container {
@@ -564,6 +671,12 @@
             select, button {
                 width: 100%;
             }
+
+            .advert-popup {
+                width: 200px;
+                right: 10px;
+                bottom: 10px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -584,6 +697,10 @@
 
             .action-buttons {
                 flex-direction: column;
+            }
+
+            .advert-popup {
+                width: 160px;
             }
         }
 
@@ -624,7 +741,19 @@
 </head>
 <body>
     <div id="header-container"></div>
-    <div id="footer-container"></div> <!-- Keeping this unchanged -->
+    <div id="footer-container"></div>
+
+    <div class="advert-popup" id="advertPopup">
+        <div class="advert-header">
+            <span class="advert-title" id="advertTitle">PREMIUM OFFER</span>
+            <span class="close-advert" id="closeAdvert">&times;</span>
+        </div>
+        <div class="advert-content">
+            <img src="monday.gif" alt="Premium Offer" class="advert-gif" id="advertGif">
+            <p class="advert-text">Upgrade to Premium for exclusive content!</p>
+            <a href="premium.html" class="advert-link">LEARN MORE</a>
+        </div>
+    </div>
 
     <script src="firebaseConfig.js"></script>
   
@@ -632,101 +761,100 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
         
-            // Load Header
-            fetch('header.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('header-container').innerHTML = data;
-                setTimeout(initHeaderScripts, 200); // Ensures header elements exist first
-            })
-            .catch(error => console.error("Error loading header:", error));
+        // Load Header
+        fetch('header.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('header-container').innerHTML = data;
+            setTimeout(initHeaderScripts, 200);
+        })
+        .catch(error => console.error("Error loading header:", error));
         
-            // Header interactions (runs after header loads)
-            function initHeaderScripts() {
-                console.log("Header script initialized");
-                const accountBtn = document.getElementById('accountBtn');
-                const dropdownContent = document.getElementById('dropdownContent');
-                const accountBtnText = document.getElementById('accountBtnText');
-                const accountDropdown = document.querySelector('.user-dropdown');
+        // Header interactions
+        function initHeaderScripts() {
+            console.log("Header script initialized");
+            const accountBtn = document.getElementById('accountBtn');
+            const dropdownContent = document.getElementById('dropdownContent');
+            const accountBtnText = document.getElementById('accountBtnText');
+            const accountDropdown = document.querySelector('.user-dropdown');
 
-                if (accountBtn && dropdownContent && accountBtnText) {
-                    console.log("Account button and dropdown found");
+            if (accountBtn && dropdownContent && accountBtnText) {
+                console.log("Account button and dropdown found");
 
-                    accountBtn.addEventListener('click', () => {
-                        accountDropdown.classList.toggle('active');
-                    });
+                accountBtn.addEventListener('click', () => {
+                    accountDropdown.classList.toggle('active');
+                });
 
-                    // Check Firebase authentication state
-                    auth.onAuthStateChanged(user => {
-                        console.log("Auth state changed:", user);
+                // Check Firebase authentication state
+                auth.onAuthStateChanged(user => {
+                    console.log("Auth state changed:", user);
 
-                        if (user) {
-                            // Fetch user data from Firestore
-                            db.collection('users').doc(user.uid).get().then((doc) => {
-                                if (doc.exists) {
-                                    const userData = doc.data();
-                                    const userName = userData.username || user.email;
-                                    accountBtnText.textContent = userName;
-                                    
-                                    // Update premium star if user has premium
-                                    updatePremiumStar(doc.data().premium || false);
-                                    
-                                    dropdownContent.innerHTML = `
-                                    <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
-                                    <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
-                                    <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
-                                    `;
+                    if (user) {
+                        // Fetch user data from Firestore
+                        db.collection('users').doc(user.uid).get().then((doc) => {
+                            if (doc.exists) {
+                                const userData = doc.data();
+                                const userName = userData.username || user.email;
+                                accountBtnText.textContent = userName;
+                                
+                                // Update premium star if user has premium
+                                updatePremiumStar(doc.data().premium || false);
+                                
+                                dropdownContent.innerHTML = `
+                                <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                                <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
+                                <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                                `;
 
-                                    document.getElementById('signOutLink').addEventListener('click', (e) => {
-                                        e.preventDefault();
-                                        auth.signOut().then(() => {
-                                            console.log("User signed out");
-                                            dropdownContent.style.display = "none";
-                                            accountBtnText.textContent = "Account";
-                                            window.location.reload();
-                                        });
+                                document.getElementById('signOutLink').addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    auth.signOut().then(() => {
+                                        console.log("User signed out");
+                                        dropdownContent.style.display = "none";
+                                        accountBtnText.textContent = "Account";
+                                        window.location.reload();
                                     });
-                                }
-                            });
-                        } else {
-                            dropdownContent.innerHTML = `
-                            <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
-                            <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
-                            <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
-                            `;
-                            accountBtnText.textContent = "Account";
-                            // Remove premium star if present
-                            updatePremiumStar(false);
-                        }
-                    });
-
-                    document.addEventListener("click", (event) => {
-                        if (!accountDropdown.contains(event.target)) {
-                            accountDropdown.classList.remove("active");
-                        }
-                    });
-                } else {
-                    console.error("Dropdown elements not found, check header.html structure.");
-                }
-            }
-
-            // Function to update premium star in header
-            function updatePremiumStar(isPremium) {
-                const accountBtnText = document.getElementById('accountBtnText');
-                if (accountBtnText) {
-                    const star = accountBtnText.querySelector('.premium-star');
-                    if (isPremium) {
-                        if (!star) {
-                            const starElement = document.createElement('span');
-                            starElement.className = 'premium-star';
-                            starElement.innerHTML = ' ⭐';
-                            accountBtnText.appendChild(starElement);
-                        }
-                    } else if (star) {
-                        star.remove();
+                                });
+                            }
+                        });
+                    } else {
+                        dropdownContent.innerHTML = `
+                        <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+                        <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
+                        <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                        `;
+                        accountBtnText.textContent = "Account";
+                        updatePremiumStar(false);
                     }
+                });
+
+                document.addEventListener("click", (event) => {
+                    if (!accountDropdown.contains(event.target)) {
+                        accountDropdown.classList.remove("active");
+                    }
+                });
+            } else {
+                console.error("Dropdown elements not found, check header.html structure.");
+            }
+        }
+
+        // Function to update premium star in header
+        function updatePremiumStar(isPremium) {
+            const accountBtnText = document.getElementById('accountBtnText');
+            if (accountBtnText) {
+                const star = accountBtnText.querySelector('.premium-star');
+                if (isPremium) {
+                    if (!star) {
+                        const starElement = document.createElement('span');
+                        starElement.className = 'premium-star';
+                        starElement.innerHTML = ' ⭐';
+                        accountBtnText.appendChild(starElement);
+                    }
+                } else if (star) {
+                    star.remove();
                 }
             }
+        }
     </script>
 
     <div class="main-container">
@@ -739,7 +867,6 @@
                         <option value="bypopularity">Popular</option>
                         <option value="airing">Airing</option>
                         <option value="upcoming">Upcoming</option>
-
                     </select>
                     
                     <select id="typeFilter">
@@ -805,6 +932,8 @@
         let currentSort = 'bypopularity';
         let currentType = 'all';
         let favorites = JSON.parse(localStorage.getItem('animeFavorites')) || [];
+        let searchTimeout = null;
+        let isSearching = false;
 
         // DOM Elements
         const animeContainer = document.getElementById('animeContainer');
@@ -821,6 +950,10 @@
         const favoritesCount = document.getElementById('favoritesCount');
         const currentYear = document.getElementById('currentYear');
         const randomBtn = document.getElementById('random-btn');
+        const advertPopup = document.getElementById('advertPopup');
+        const closeAdvert = document.getElementById('closeAdvert');
+        const advertGif = document.getElementById('advertGif');
+
 
         // Initialize the application
         function init() {
@@ -835,32 +968,47 @@
             
             // Set up event listeners
             setupEventListeners();
+            
+            // Show advert popup after delay
+            setTimeout(showAdvert, 100);
         }
 
         // Set up all event listeners
         function setupEventListeners() {
-            // Search functionality
-            searchBar.addEventListener('input', debounce(filterBySearch, 300));
+            // Search functionality - now searches entire API
+            searchBar.addEventListener('input', handleSearchInput);
             
             // Sort functionality
             sortOptions.addEventListener('change', () => {
-                currentSort = sortOptions.value;
-                currentPage = 1;
-                fetchAnime();
+                if (!isSearching) {
+                    currentSort = sortOptions.value;
+                    currentPage = 1;
+                    fetchAnime();
+                }
             });
             
             // Type filter functionality
             typeFilter.addEventListener('change', () => {
-                currentType = typeFilter.value;
-                currentPage = 1;
-                fetchAnime();
+                if (!isSearching) {
+                    currentType = typeFilter.value;
+                    currentPage = 1;
+                    fetchAnime();
+                }
             });
             
             // Mood search toggle
-            moodToggle.addEventListener('click', toggleMoodSearch);
+            moodToggle.addEventListener('click', () => {
+                if (!isSearching) {
+                    toggleMoodSearch();
+                }
+            });
             
             // Mood slider
-            moodSlider.addEventListener('input', filterByMood);
+            moodSlider.addEventListener('input', () => {
+                if (!isSearching) {
+                    filterByMood();
+                }
+            });
             
             // Load more button
             loadMoreBtn.addEventListener('click', loadMoreAnime);
@@ -868,27 +1016,49 @@
             // Random recommendation button
             randomBtn.addEventListener('click', fetchRandomAnime);
             
-            // Sign in/up buttons
-            document.querySelector('.btn-signin')?.addEventListener('click', () => {
-                alert('Sign in functionality would go here');
-            });
+            // Advert popup close button
+            closeAdvert.addEventListener('click', hideAdvert);
             
-            document.querySelector('.btn-signup')?.addEventListener('click', () => {
-                alert('Sign up functionality would go here');
+            // Advert GIF click handler
+            advertGif.addEventListener('click', () => {
+                window.location.href = 'premium.html';
             });
         }
 
+        // Handle search input with debounce
+        function handleSearchInput() {
+            clearTimeout(searchTimeout);
+            const searchTerm = searchBar.value.trim();
+            
+            if (searchTerm === '') {
+                // If search is empty, reset to normal browsing
+                isSearching = false;
+                currentPage = 1;
+                fetchAnime();
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                isSearching = true;
+                currentPage = 1;
+                fetchAnime(searchTerm);
+            }, 500);
+        }
+
         // Fetch anime data from Jikan API
-        async function fetchAnime() {
+        async function fetchAnime(searchTerm = '') {
             loadingElement.style.display = 'block';
             loadMoreBtn.disabled = true;
             
             try {
                 let url;
-                if (searchBar.value.trim() === '') {
+                if (searchTerm === '') {
+                    // Normal browsing with filters
+                    isSearching = false;
                     url = `${API_URL}/top/anime?page=${currentPage}&filter=${currentSort}&type=${currentType === 'all' ? '' : currentType}`;
                 } else {
-                    url = `${API_URL}/anime?q=${encodeURIComponent(searchBar.value)}&page=${currentPage}&order_by=${currentSort}&type=${currentType === 'all' ? '' : currentType}`;
+                    // Direct search - ignore all filters
+                    url = `${API_URL}/anime?q=${encodeURIComponent(searchTerm)}&page=${currentPage}`;
                 }
                 
                 const response = await fetch(url);
@@ -903,11 +1073,14 @@
                     animeData = [...animeData, ...newAnime];
                 }
                 
+                // For search results, show all matches without additional filtering
                 filteredAnime = [...animeData];
                 renderAnime();
                 
                 if (!hasNextPage) {
                     loadMoreBtn.style.display = 'none';
+                } else {
+                    loadMoreBtn.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error fetching anime:', error);
@@ -1110,7 +1283,7 @@
         function loadMoreAnime() {
             if (!hasNextPage) return;
             currentPage++;
-            fetchAnime();
+            fetchAnime(searchBar.value.trim());
         }
 
         // Add anime to favorites
@@ -1206,19 +1379,44 @@
             });
         }
 
-        // Debounce function for search input
-        function debounce(func, wait) {
-            let timeout;
-            return function() {
-                const context = this, args = arguments;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    func.apply(context, args);
-                }, wait);
-            };
+        function showAdvert() {
+        const advertPopup = document.getElementById('advertPopup');
+        
+        if (advertPopup) {
+            // Check if user is premium (you'll need to implement this check)
+            const isPremium = false; // Default to false, replace with actual check
+            
+            if (!isPremium) {
+                const advertGif = document.getElementById('advertGif');
+                
+                // Ensure correct path to GIF
+                advertGif.src = "monday.gif";
+                
+                // Error handling for GIF loading
+                advertGif.onerror = function() {
+                    console.error('Failed to load monday.gif');
+                    this.src = 'default.gif'; // Fallback image
+                };
+                
+                // Show the popup with animation
+                advertPopup.classList.remove('hide');
+                advertPopup.classList.add('show');
+                
+            }
         }
+    }
 
-        // Initialize the app
+    function hideAdvert() {
+        const advertPopup = document.getElementById('advertPopup');
+        if (advertPopup) {
+            advertPopup.classList.add('hide');
+            advertPopup.classList.remove('show');
+            
+            setTimeout(showAdvert, 100000);
+        }
+    }
+
+
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
