@@ -252,15 +252,15 @@
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.5s ease;
-  }
-  
-  .comment.visible {
+    }
+    
+    .comment.visible {
     display: block;
     opacity: 1;
     transform: translateY(0);
-  }
-  
-  .show-more-button {
+    }
+    
+    .show-more-button {
     background-color: #1A2A3A;
     color: #75A439;
     border: 1px solid #75A439;
@@ -270,21 +270,21 @@
     margin: 20px auto;
     display: block;
     transition: all 0.3s;
-  }
-  
-  .show-more-button:hover {
+    }
+    
+    .show-more-button:hover {
     background-color: #75A439;
     color: #fff;
-  }
-  
-  .show-more-button i {
+    }
+    
+    .show-more-button i {
     margin-left: 5px;
     transition: transform 0.3s;
-  }
-  
-  .show-more-button.active i {
+    }
+    
+    .show-more-button.active i {
     transform: rotate(180deg);
-  }
+    }
   </style>
 </head>
 
@@ -366,6 +366,7 @@
 
     const commentsRef = db.collection('chat');
 
+    // Track user votes globally
     const userVotes = {};
     let allComments = [];
     let visibleCommentCount = 3;
@@ -420,6 +421,11 @@
           const commentData = doc.data();
           commentData.id = doc.id;
           allComments.push(commentData);
+          
+          // Initialize user votes for this comment if not exists
+          if (!userVotes[commentData.id]) {
+            userVotes[commentData.id] = {};
+          }
         });
         
         // Only show the button if there are more than 3 comments
@@ -469,24 +475,14 @@
       const commentId = commentElement.dataset.commentId;
       const likeButton = commentElement.querySelector('.like-button');
       const dislikeButton = commentElement.querySelector('.dislike-button');
-      const likeCount = commentElement.querySelector('.like-count');
-      const dislikeCount = commentElement.querySelector('.dislike-count');
       
-      // Get user ID (or use 'guest' for anonymous users)
       const userId = auth.currentUser ? auth.currentUser.uid : 'guest';
       
-      // Initialize votes tracking for this comment
-      if (!userVotes[commentId]) {
-        userVotes[commentId] = {};
-      }
+      // Check if user has already voted on this comment
+      const currentVote = userVotes[commentId][userId];
       
-      const existingVote = userVotes[commentId][userId];
-      if (existingVote === 'like') {
-          likeButton.classList.add('active');
-      } 
-      else if (existingVote === 'dislike') {
-          dislikeButton.classList.add('active');
-      }
+      // Set initial button states
+      updateButtonStates(likeButton, dislikeButton, currentVote);
 
       likeButton.addEventListener('click', async () => {
         if (!auth.currentUser) {
@@ -501,29 +497,31 @@
         
         const currentLikes = commentDoc.data().likes || 0;
         const currentDislikes = commentDoc.data().dislikes || 0;
+        const currentVote = userVotes[commentId][userId];
         
-        if (userVotes[commentId][userId] === 'like') {
-            // Remove like
-            await commentRef.update({ likes: currentLikes - 1 });
-            userVotes[commentId][userId] = null;
-            likeButton.classList.remove('active');
+        let updates = {};
+        
+        if (currentVote === 'like') {
+          // User is removing their like
+          updates.likes = currentLikes - 1;
+          userVotes[commentId][userId] = null;
         } else {
-            // Add like and remove dislike if exists
-            let updates = { likes: currentLikes + 1 };
-            if (userVotes[commentId][userId] === 'dislike') {
-                updates.dislikes = currentDislikes - 1;
-            }
-            await commentRef.update(updates);
-            userVotes[commentId][userId] = 'like';
-            likeButton.classList.add('active');
-            dislikeButton.classList.remove('active');
+          // User is adding a like (and removing dislike if exists)
+          updates.likes = currentLikes + 1;
+          if (currentVote === 'dislike') {
+            updates.dislikes = currentDislikes - 1;
+          }
+          userVotes[commentId][userId] = 'like';
         }
-    });
-    
-    dislikeButton.addEventListener('click', async () => {
+        
+        await commentRef.update(updates);
+        updateButtonStates(likeButton, dislikeButton, userVotes[commentId][userId]);
+      });
+      
+      dislikeButton.addEventListener('click', async () => {
         if (!auth.currentUser) {
-            alert('Please sign in to vote');
-            return;
+          alert('Please sign in to vote');
+          return;
         }
         
         const commentRef = commentsRef.doc(commentId);
@@ -533,25 +531,41 @@
         
         const currentLikes = commentDoc.data().likes || 0;
         const currentDislikes = commentDoc.data().dislikes || 0;
+        const currentVote = userVotes[commentId][userId];
         
-        if (userVotes[commentId][userId] === 'dislike') {
-            // Remove dislike
-            await commentRef.update({ dislikes: currentDislikes - 1 });
-            userVotes[commentId][userId] = null;
-            dislikeButton.classList.remove('active');
+        let updates = {};
+        
+        if (currentVote === 'dislike') {
+          // User is removing their dislike
+          updates.dislikes = currentDislikes - 1;
+          userVotes[commentId][userId] = null;
         } else {
-            // Add dislike and remove like if exists
-            let updates = { dislikes: currentDislikes + 1 };
-            if (userVotes[commentId][userId] === 'like') {
-                updates.likes = currentLikes - 1;
-            }
-            await commentRef.update(updates);
-            userVotes[commentId][userId] = 'dislike';
-            dislikeButton.classList.add('active');
-            likeButton.classList.remove('active');
+          // User is adding a dislike (and removing like if exists)
+          updates.dislikes = currentDislikes + 1;
+          if (currentVote === 'like') {
+            updates.likes = currentLikes - 1;
+          }
+          userVotes[commentId][userId] = 'dislike';
         }
-    });
-}
+        
+        await commentRef.update(updates);
+        updateButtonStates(likeButton, dislikeButton, userVotes[commentId][userId]);
+      });
+
+      // Helper function to update button states
+      function updateButtonStates(likeBtn, dislikeBtn, voteType) {
+        // Reset both buttons first
+        likeBtn.classList.remove('active');
+        dislikeBtn.classList.remove('active');
+        
+        // Set active state based on vote type
+        if (voteType === 'like') {
+          likeBtn.classList.add('active');
+        } else if (voteType === 'dislike') {
+          dislikeBtn.classList.add('active');
+        }
+      }
+    }
 
     // Submit a new comment
     document.getElementById('submit-comment').addEventListener('click', async () => {
@@ -601,118 +615,112 @@
 
     // Initialize the comments when the page loads
     document.addEventListener('DOMContentLoaded', () => {
+      // Load Header
+      fetch('header.html')
+          .then(response => response.text())
+          .then(data => {
+              document.getElementById('header-container').innerHTML = data;
+              setTimeout(initHeaderScripts, 200);
+          })
+          .catch(error => console.error("Error loading header:", error));
+          
+          // Header interactions
+          function initHeaderScripts() {
+              console.log("Header script initialized");
+              const accountBtn = document.getElementById('accountBtn');
+              const dropdownContent = document.getElementById('dropdownContent');
+              const accountBtnText = document.getElementById('accountBtnText');
+              const accountDropdown = document.querySelector('.user-dropdown');
+
+              if (accountBtn && dropdownContent && accountBtnText) {
+                  console.log("Account button and dropdown found");
+
+                  accountBtn.addEventListener('click', () => {
+                      accountDropdown.classList.toggle('active');
+                  });
+
+                  // Check Firebase authentication state
+                  auth.onAuthStateChanged(user => {
+                      console.log("Auth state changed:", user);
+
+                      if (user) {
+                          // Fetch user data from Firestore
+                          db.collection('users').doc(user.uid).get().then((doc) => {
+                              if (doc.exists) {
+                                  const userData = doc.data();
+                                  const userName = userData.username || user.email;
+                                  accountBtnText.textContent = userName;
+                                  
+                                  // Update premium star if user has premium
+                                  updatePremiumStar(doc.data().premium || false);
+                                  
+                                  dropdownContent.innerHTML = `
+                                  <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                                  <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
+                                  <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                                  `;
+
+                                  document.getElementById('signOutLink').addEventListener('click', (e) => {
+                                      e.preventDefault();
+                                      auth.signOut().then(() => {
+                                          console.log("User signed out");
+                                          dropdownContent.style.display = "none";
+                                          accountBtnText.textContent = "Account";
+                                          window.location.reload();
+                                      });
+                                  });
+                              }
+                          });
+                      } else {
+                          dropdownContent.innerHTML = `
+                          <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+                          <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
+                          <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
+                          `;
+                          accountBtnText.textContent = "Account";
+                          updatePremiumStar(false);
+                      }
+                  });
+
+                  document.addEventListener("click", (event) => {
+                      if (!accountDropdown.contains(event.target)) {
+                          accountDropdown.classList.remove("active");
+                      }
+                  });
+              } else {
+                  console.error("Dropdown elements not found, check header.html structure.");
+              }
+          }
+
+          // Function to update premium star in header
+          function updatePremiumStar(isPremium) {
+              const accountBtnText = document.getElementById('accountBtnText');
+              if (accountBtnText) {
+                  const star = accountBtnText.querySelector('.premium-star');
+                  if (isPremium) {
+                      if (!star) {
+                          const starElement = document.createElement('span');
+                          starElement.className = 'premium-star';
+                          starElement.innerHTML = ' ⭐';
+                          accountBtnText.appendChild(starElement);
+                      }
+                  } else if (star) {
+                      star.remove();
+                  }
+              }
+          }
+
+      // Load footer
+      fetch('footer.html')
+          .then(response => response.text())
+          .then(data => {
+              document.getElementById('footer-container').innerHTML = data;
+          })
+          .catch(error => console.error('Error loading footer:', error));
+
+      // Load comments
       loadComments();
     });
-
-    document.addEventListener('DOMContentLoaded', () => {
-
-    // Load Header
-    fetch('header.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('header-container').innerHTML = data;
-            setTimeout(initHeaderScripts, 200);
-        })
-        .catch(error => console.error("Error loading header:", error));
-        
-        // Header interactions
-        function initHeaderScripts() {
-            console.log("Header script initialized");
-            const accountBtn = document.getElementById('accountBtn');
-            const dropdownContent = document.getElementById('dropdownContent');
-            const accountBtnText = document.getElementById('accountBtnText');
-            const accountDropdown = document.querySelector('.user-dropdown');
-
-            if (accountBtn && dropdownContent && accountBtnText) {
-                console.log("Account button and dropdown found");
-
-                accountBtn.addEventListener('click', () => {
-                    accountDropdown.classList.toggle('active');
-                });
-
-                // Check Firebase authentication state
-                auth.onAuthStateChanged(user => {
-                    console.log("Auth state changed:", user);
-
-                    if (user) {
-                        // Fetch user data from Firestore
-                        db.collection('users').doc(user.uid).get().then((doc) => {
-                            if (doc.exists) {
-                                const userData = doc.data();
-                                const userName = userData.username || user.email;
-                                accountBtnText.textContent = userName;
-                                
-                                // Update premium star if user has premium
-                                updatePremiumStar(doc.data().premium || false);
-                                
-                                dropdownContent.innerHTML = `
-                                <a href="#" id="signOutLink"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
-                                <a href="favourites.html"><i class="fas fa-heart"></i> Favorites</a>
-                                <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
-                                `;
-
-                                document.getElementById('signOutLink').addEventListener('click', (e) => {
-                                    e.preventDefault();
-                                    auth.signOut().then(() => {
-                                        console.log("User signed out");
-                                        dropdownContent.style.display = "none";
-                                        accountBtnText.textContent = "Account";
-                                        window.location.reload();
-                                    });
-                                });
-                            }
-                        });
-                    } else {
-                        dropdownContent.innerHTML = `
-                        <a href="account.html?action=signin"><i class="fas fa-sign-in-alt"></i> Sign In</a>
-                        <a href="account.html?action=create"><i class="fas fa-user-plus"></i> Create Account</a>
-                        <a href="aboutus.html"><i class="fas fa-info-circle"></i> About us</a>
-                        `;
-                        accountBtnText.textContent = "Account";
-                        updatePremiumStar(false);
-                    }
-                });
-
-                document.addEventListener("click", (event) => {
-                    if (!accountDropdown.contains(event.target)) {
-                        accountDropdown.classList.remove("active");
-                    }
-                });
-            } else {
-                console.error("Dropdown elements not found, check header.html structure.");
-            }
-        }
-
-        // Function to update premium star in header
-        function updatePremiumStar(isPremium) {
-            const accountBtnText = document.getElementById('accountBtnText');
-            if (accountBtnText) {
-                const star = accountBtnText.querySelector('.premium-star');
-                if (isPremium) {
-                    if (!star) {
-                        const starElement = document.createElement('span');
-                        starElement.className = 'premium-star';
-                        starElement.innerHTML = ' ⭐';
-                        accountBtnText.appendChild(starElement);
-                    }
-                } else if (star) {
-                    star.remove();
-                }
-            }
-        }
-
-    // Load footer
-    fetch('footer.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('footer-container').innerHTML = data;
-        })
-        .catch(error => console.error('Error loading footer:', error));
-
-    // Load comments
-    loadComments();
-});
-
     </script>
 </body>
 </html>
