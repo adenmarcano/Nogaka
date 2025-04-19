@@ -174,12 +174,17 @@
       transform: scale(1.1);
     }
 
+    .vote-button.active {
+        transform: scale(1.2);
+        transition: transform 0.2s ease;
+    }
+
     .like-button.active {
-      color: #75A439;
+        color: #75A439;
     }
 
     .dislike-button.active {
-      color: #D32F2F;
+        color: #D32F2F;
     }
 
     .comment-form {
@@ -475,6 +480,14 @@
         userVotes[commentId] = {};
       }
       
+      const existingVote = userVotes[commentId][userId];
+      if (existingVote === 'like') {
+          likeButton.classList.add('active');
+      } 
+      else if (existingVote === 'dislike') {
+          dislikeButton.classList.add('active');
+      }
+
       likeButton.addEventListener('click', async () => {
         if (!auth.currentUser) {
           alert('Please sign in to vote');
@@ -490,35 +503,27 @@
         const currentDislikes = commentDoc.data().dislikes || 0;
         
         if (userVotes[commentId][userId] === 'like') {
-          // User already liked - remove like
-          await commentRef.update({
-            likes: currentLikes - 1
-          });
-          userVotes[commentId][userId] = null;
-          likeButton.classList.remove('active');
-        } else if (userVotes[commentId][userId] === 'dislike') {
-          // User is switching from dislike to like
-          await commentRef.update({
-            likes: currentLikes + 1,
-            dislikes: currentDislikes - 1
-          });
-          userVotes[commentId][userId] = 'like';
-          likeButton.classList.add('active');
-          dislikeButton.classList.remove('active');
+            // Remove like
+            await commentRef.update({ likes: currentLikes - 1 });
+            userVotes[commentId][userId] = null;
+            likeButton.classList.remove('active');
         } else {
-          // New like
-          await commentRef.update({
-            likes: currentLikes + 1
-          });
-          userVotes[commentId][userId] = 'like';
-          likeButton.classList.add('active');
+            // Add like and remove dislike if exists
+            let updates = { likes: currentLikes + 1 };
+            if (userVotes[commentId][userId] === 'dislike') {
+                updates.dislikes = currentDislikes - 1;
+            }
+            await commentRef.update(updates);
+            userVotes[commentId][userId] = 'like';
+            likeButton.classList.add('active');
+            dislikeButton.classList.remove('active');
         }
-      });
-      
-      dislikeButton.addEventListener('click', async () => {
+    });
+    
+    dislikeButton.addEventListener('click', async () => {
         if (!auth.currentUser) {
-          alert('Please sign in to vote');
-          return;
+            alert('Please sign in to vote');
+            return;
         }
         
         const commentRef = commentsRef.doc(commentId);
@@ -530,31 +535,23 @@
         const currentDislikes = commentDoc.data().dislikes || 0;
         
         if (userVotes[commentId][userId] === 'dislike') {
-          // User already disliked - remove dislike
-          await commentRef.update({
-            dislikes: currentDislikes - 1
-          });
-          userVotes[commentId][userId] = null;
-          dislikeButton.classList.remove('active');
-        } else if (userVotes[commentId][userId] === 'like') {
-          // User is switching from like to dislike
-          await commentRef.update({
-            likes: currentLikes - 1,
-            dislikes: currentDislikes + 1
-          });
-          userVotes[commentId][userId] = 'dislike';
-          dislikeButton.classList.add('active');
-          likeButton.classList.remove('active');
+            // Remove dislike
+            await commentRef.update({ dislikes: currentDislikes - 1 });
+            userVotes[commentId][userId] = null;
+            dislikeButton.classList.remove('active');
         } else {
-          // New dislike
-          await commentRef.update({
-            dislikes: currentDislikes + 1
-          });
-          userVotes[commentId][userId] = 'dislike';
-          dislikeButton.classList.add('active');
+            // Add dislike and remove like if exists
+            let updates = { dislikes: currentDislikes + 1 };
+            if (userVotes[commentId][userId] === 'like') {
+                updates.likes = currentLikes - 1;
+            }
+            await commentRef.update(updates);
+            userVotes[commentId][userId] = 'dislike';
+            dislikeButton.classList.add('active');
+            likeButton.classList.remove('active');
         }
-      });
-    }
+    });
+}
 
     // Submit a new comment
     document.getElementById('submit-comment').addEventListener('click', async () => {
