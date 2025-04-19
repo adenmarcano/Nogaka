@@ -264,84 +264,6 @@
       margin-top: 10px;
     }
 
-    .chat-container {
-      background: linear-gradient(135deg, #18203D, #301934);
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 20px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    }
-
-    .chat-messages {
-      height: 300px;
-      overflow-y: auto;
-      margin-bottom: 15px;
-      padding: 10px;
-      background: rgba(0,0,0,0.2);
-      border-radius: 5px;
-    }
-
-    .chat-message {
-      margin-bottom: 10px;
-      padding: 10px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 5px;
-      position: relative;
-    }
-
-    .chat-username {
-      font-weight: bold;
-      color: #75A439;
-      margin-right: 10px;
-    }
-
-    .chat-timestamp {
-      font-size: 0.8em;
-      color: #aaa;
-      margin-left: 10px;
-    }
-
-    .chat-input-container {
-      display: flex;
-    }
-
-    .chat-input {
-      flex: 1;
-      padding: 10px;
-      border-radius: 5px 0 0 5px;
-      border: none;
-      background: rgba(255,255,255,0.1);
-      color: white;
-    }
-
-    .chat-send-btn {
-      padding: 10px 15px;
-      background: #75A439;
-      color: white;
-      border: none;
-      border-radius: 0 5px 5px 0;
-      cursor: pointer;
-    }
-
-    .chat-like-btn {
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      background: none;
-      border: none;
-      color: #aaa;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .chat-like-btn.liked {
-      color: #FF6B6B;
-    }
-
-    .chat-like-btn.disliked {
-      color: #167D9D;
-    }
-
     .winning-line {
       position: absolute;
       width: 100%;
@@ -428,41 +350,6 @@
       background: rgba(255, 215, 0, 0.1);
       border-radius: 5px;
       padding: 5px;
-    }
-    
-    /* Typing indicator */
-    .typing-indicator {
-      color: #aaa;
-      font-size: 0.9em;
-      margin-bottom: 10px;
-      display: none;
-    }
-    
-    /* Chat timestamp separator */
-    .timestamp-separator {
-      text-align: center;
-      margin: 15px 0;
-      color: #aaa;
-      font-size: 0.8em;
-      position: relative;
-    }
-    
-    .timestamp-separator::before,
-    .timestamp-separator::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      width: 40%;
-      height: 1px;
-      background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .timestamp-separator::before {
-      left: 0;
-    }
-    
-    .timestamp-separator::after {
-      right: 0;
     }
   </style>
 </head>
@@ -573,19 +460,6 @@
             font-size: 18px;
             box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
           ">CLAIM YOUR PRIZE!</button>
-        </div>
-      </div>
-
-      <!-- Chat System -->
-      <div class="chat-container">
-        <h3 style="color: #75A439; margin-top: 0;">💬 Global Community Chat</h3>
-        <div class="typing-indicator" id="typing-indicator"></div>
-        <div class="chat-messages" id="chat-messages">
-          <!-- Messages will be loaded here -->
-        </div>
-        <div class="chat-input-container">
-          <input type="text" class="chat-input" id="chat-input" placeholder="Type your message..." autocomplete="off">
-          <button class="chat-send-btn" id="chat-send-btn">Send</button>
         </div>
       </div>
     </main>
@@ -785,10 +659,7 @@
       rank: 1,
       xp: 0,
       prestige: 0,
-      multiplier: 1,
-      likedMessages: {},
-      isTyping: false,
-      lastTypingTime: 0
+      multiplier: 1
     };
 
     // Load user data from Firebase or localStorage
@@ -812,29 +683,15 @@
                 rank: 1,
                 xp: 0,
                 prestige: 0,
-                multiplier: 1,
-                likedMessages: {},
-                isTyping: false,
-                lastTypingTime: 0
+                multiplier: 1
               };
               // Then merge with Firestore data
               Object.assign(user, firestoreData);
               
               updateUI();
               checkRefreshCoins();
-              initializeChat();
               updatePremiumStar();
               loadLeaderboard();
-              
-              // Load liked messages
-              if (user.likedMessages) {
-                Object.keys(user.likedMessages).forEach(messageId => {
-                  const likeBtn = document.querySelector(`.chat-like-btn[data-id="${messageId}"]`);
-                  if (likeBtn) {
-                    likeBtn.classList.add(user.likedMessages[messageId] === 1 ? 'liked' : 'disliked');
-                  }
-                });
-              }
             } else {
               // Create new user document with default values
               user = {
@@ -845,10 +702,7 @@
                 rank: 1,
                 xp: 0,
                 prestige: 0,
-                multiplier: 1,
-                likedMessages: {},
-                isTyping: false,
-                lastTypingTime: 0
+                multiplier: 1
               };
               db.collection('users').doc(firebaseUser.uid).set(user);
             }
@@ -928,44 +782,6 @@
             leaderboardList.innerHTML = '<li class="leaderboard-item"><div class="leaderboard-user">Error loading leaderboard</div></li>';
         });
 }
-
-    // Call this whenever user data changes (after spins, rank ups, etc.)
-    function updateLeaderboard() {
-      if (auth.currentUser) {
-        loadLeaderboard();
-      }
-    }
-
-    // Add this to your existing checkRankUp() function:
-    function checkRankUp() {
-      const xpNeeded = user.rank * 1000;
-      
-      if (user.xp >= xpNeeded && user.rank < 100) {
-        user.xp -= xpNeeded;
-        user.rank++;
-        showAlert(`🎉 Rank Up! You are now Rank ${user.rank}`, "#FFD700");
-        createConfetti(100);
-        
-        // Check if reached max rank for prestige
-        if (user.rank >= 100) {
-          showAlert("🎉 Max Rank Reached! You can now Prestige for a permanent multiplier!", "#A45CFF");
-          document.getElementById('prestige-btn').style.display = 'block';
-        }
-        
-        saveUserData();
-        updateUI();
-        updateLeaderboard(); // Add this line to update leaderboard after rank up
-      }
-    }
-
-    // Also call loadLeaderboard() when initializing the game
-    window.addEventListener('DOMContentLoaded', () => {
-      loadUserData();
-      initializeSlots();
-      loadLeaderboard(); // Add this line
-      
-      // ... rest of your initialization code
-    });
 
     // Update premium star in header
     function updatePremiumStar() {
@@ -1061,247 +877,6 @@
         document.getElementById('prestige-btn').style.display = 'none';
       }
     }
-
-    // Initialize chat system with real-time updates
-    function initializeChat() {
-      if (!auth.currentUser) return;
-      
-      // Load existing messages
-      loadChatMessages();
-      
-      // Set up real-time listener for new messages
-      const chatQuery = db.collection('chat')
-        .orderBy('timestamp', 'desc')
-        .limit(50);
-      
-      chatQuery.onSnapshot(snapshot => {
-        snapshot.docChanges().forEach(change => {
-          if (change.type === 'added') {
-            // Only add if not already present (to avoid duplicates)
-            if (!document.querySelector(`.chat-message[data-id="${change.doc.id}"]`)) {
-              addMessageToChat(change.doc.data(), change.doc.id);
-            }
-          } else if (change.type === 'modified') {
-            // Update likes if message was modified
-            updateMessageLikes(change.doc.id, change.doc.data());
-          }
-        });
-      });
-      
-      // Set up typing indicator listener
-      db.collection('typingIndicators')
-        .where('userId', '!=', auth.currentUser.uid)
-        .onSnapshot(snapshot => {
-          const typingUsers = [];
-          snapshot.forEach(doc => {
-            typingUsers.push(doc.data().username);
-          });
-          
-          const typingIndicator = document.getElementById('typing-indicator');
-          if (typingUsers.length > 0) {
-            typingIndicator.textContent = `${typingUsers.join(', ')} ${typingUsers.length > 1 ? 'are' : 'is'} typing...`;
-            typingIndicator.style.display = 'block';
-          } else {
-            typingIndicator.style.display = 'none';
-          }
-        });
-      
-      // Set up message sending
-      document.getElementById('chat-send-btn').addEventListener('click', sendMessage);
-      document.getElementById('chat-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') sendMessage();
-      });
-      
-      // Typing indicator
-      const chatInput = document.getElementById('chat-input');
-      let typingTimeout;
-      
-      chatInput.addEventListener('input', () => {
-        if (!user.isTyping) {
-          user.isTyping = true;
-          updateTypingStatus(true);
-        }
-        
-        user.lastTypingTime = Date.now();
-        
-        clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-          const timeDiff = Date.now() - user.lastTypingTime;
-          if (timeDiff >= 2000 && user.isTyping) {
-            user.isTyping = false;
-            updateTypingStatus(false);
-          }
-        }, 2000);
-      });
-    }
-    
-    // Update typing status in Firestore
-    function updateTypingStatus(isTyping) {
-      if (!auth.currentUser) return;
-      
-      const typingRef = db.collection('typingIndicators').doc(auth.currentUser.uid);
-      
-      if (isTyping) {
-        typingRef.set({
-          userId: auth.currentUser.uid,
-          username: user.username,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } else {
-        typingRef.delete();
-      }
-    }
-
-    // Update message likes in UI
-    function updateMessageLikes(messageId, messageData) {
-      const messageElement = document.querySelector(`.chat-message[data-id="${messageId}"]`);
-      if (messageElement) {
-        const likeBtn = messageElement.querySelector('.chat-like-btn');
-        if (likeBtn) {
-          likeBtn.innerHTML = `❤️ ${messageData.likes || 0}`;
-        }
-      }
-    }
-
-    // Load chat messages
-    function loadChatMessages() {
-      const chatMessages = document.getElementById('chat-messages');
-      chatMessages.innerHTML = '';
-      
-      let lastDate = null;
-      
-      db.collection('chat')
-        .orderBy('timestamp', 'desc')
-        .limit(50)
-        .get()
-        .then(snapshot => {
-          snapshot.forEach(doc => {
-            const message = doc.data();
-            const messageDate = message.timestamp?.toDate() || new Date();
-            const messageDay = messageDate.toDateString();
-            
-            // Add date separator if needed
-            if (lastDate !== messageDay) {
-              const separator = document.createElement('div');
-              separator.className = 'timestamp-separator';
-              separator.textContent = messageDay;
-              chatMessages.appendChild(separator);
-              lastDate = messageDay;
-            }
-            
-            addMessageToChat(message, doc.id);
-          });
-          
-          // Scroll to bottom
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-        });
-    }
-
-    // Add message to chat UI
-    function addMessageToChat(message, id) {
-      const chatMessages = document.getElementById('chat-messages');
-      const messageElement = document.createElement('div');
-      messageElement.className = 'chat-message';
-      messageElement.setAttribute('data-id', id);
-      
-      // Check if user has liked/disliked this message
-      const userLikeStatus = user.likedMessages?.[id] || 0;
-      const likeClass = userLikeStatus === 1 ? 'liked' : (userLikeStatus === -1 ? 'disliked' : '');
-      const action = userLikeStatus === 1 ? 'unlike' : 'like';
-      
-      const timestamp = message.timestamp?.toDate() || new Date();
-      const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      messageElement.innerHTML = `
-        <span class="chat-username">${message.username}</span>
-        ${message.text}
-        <span class="chat-timestamp">${timeString}</span>
-        <button class="chat-like-btn ${likeClass}" data-id="${id}" data-action="${action}">
-          ❤️ ${message.likes || 0}
-        </button>
-      `;
-      
-      // Add to top of chat (newest messages at bottom)
-      chatMessages.appendChild(messageElement);
-      
-      // Scroll to bottom to see new messages
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    // Send chat message
-    function sendMessage() {
-      const input = document.getElementById('chat-input');
-      const text = input.value.trim();
-      
-      if (!text || !auth.currentUser) {
-        showAlert("You must be logged in to chat", "#FF6B6B");
-        return;
-      }
-      
-      // Clear typing indicator
-      user.isTyping = false;
-      updateTypingStatus(false);
-      
-      const message = {
-        username: user.username,
-        text: text,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        likes: 0,
-        userId: auth.currentUser.uid
-      };
-      
-      db.collection('chat').add(message)
-        .then(() => {
-          input.value = '';
-        })
-        .catch(error => {
-          showAlert("Failed to send message", "#FF6B6B");
-          console.error("Error sending message:", error);
-        });
-    }
-
-    // Handle like/dislike functionality
-    document.addEventListener('click', function(e) {
-      if (e.target.classList.contains('chat-like-btn')) {
-        if (!auth.currentUser) {
-          showAlert("You must be logged in to like messages", "#FF6B6B");
-          return;
-        }
-        
-        const messageId = e.target.getAttribute('data-id');
-        const currentAction = e.target.getAttribute('data-action');
-        let newAction = '';
-        let increment = 0;
-        
-        // Determine the new action and increment value
-        if (currentAction === 'like') {
-          // User is liking (or changing from dislike to like)
-          newAction = 'unlike';
-          increment = user.likedMessages[messageId] === -1 ? 2 : 1;
-        } else {
-          // User is unliking
-          newAction = 'like';
-          increment = -1;
-        }
-        
-        // Update Firestore
-        db.collection('chat').doc(messageId).update({
-          likes: firebase.firestore.FieldValue.increment(increment)
-        }).then(() => {
-          // Update local user data
-          user.likedMessages = user.likedMessages || {};
-          user.likedMessages[messageId] = currentAction === 'like' ? 1 : 0;
-          saveUserData();
-          
-          // Update UI
-          e.target.setAttribute('data-action', newAction);
-          e.target.classList.toggle('liked');
-          e.target.classList.remove('disliked');
-        }).catch(error => {
-          console.error("Error updating like:", error);
-        });
-      }
-    });
 
     // Slot machine configurations with adjusted payouts
     const slotConfigs = {
@@ -1809,10 +1384,10 @@
         });
 
         // Check Firebase authentication state
-        auth.onAuthStateChanged(user => {
-          if (user) {
+        auth.onAuthStateChanged(firebaseUser => {
+          if (firebaseUser) {
             // Fetch user data from Firestore
-            db.collection('users').doc(user.uid).get().then((doc) => {
+            db.collection('users').doc(firebaseUser.uid).get().then((doc) => {
               if (doc.exists) {
                 const userData = doc.data();
                 const userName = userData.username || user.email;
