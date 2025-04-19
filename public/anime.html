@@ -1407,14 +1407,49 @@
     }
 
     function hideAdvert() {
-        const advertPopup = document.getElementById('advertPopup');
-        if (advertPopup) {
-            advertPopup.classList.add('hide');
-            advertPopup.classList.remove('show');
+    const advertPopup = document.getElementById('advertPopup');
+    if (advertPopup) {
+        // Add hide animation
+        advertPopup.classList.add('hide');
+        advertPopup.classList.remove('show');
+        
+        // After animation completes, remove from DOM
+        setTimeout(() => {
+            advertPopup.remove(); // Completely remove from DOM
             
-            setTimeout(showAdvert, 100000);
-        }
+            // Set timer to recreate and show advert
+            setTimeout(() => {
+                // Recreate the advert popup
+                const newAdvert = `
+                    <div class="advert-popup" id="advertPopup">
+                        <div class="advert-header">
+                            <span class="advert-title" id="advertTitle">PREMIUM OFFER</span>
+                            <span class="close-advert" id="closeAdvert">&times;</span>
+                        </div>
+                        <div class="advert-content">
+                            <img src="monday.gif" alt="Premium Offer" class="advert-gif" id="advertGif">
+                            <p class="advert-text">Upgrade to Premium for exclusive content!</p>
+                            <a href="premium.html" class="advert-link">LEARN MORE</a>
+                        </div>
+                    </div>
+                `;
+                
+                // Add new advert to body
+                document.body.insertAdjacentHTML('beforeend', newAdvert);
+                
+                // Reattach event listeners
+                const newCloseBtn = document.getElementById('closeAdvert');
+                if (newCloseBtn) {
+                    newCloseBtn.addEventListener('click', hideAdvert);
+                }
+                
+                // Show the new advert
+                showAdvert();
+                
+            }, 100000); // 100 seconds
+        }, 500); // Wait for hide animation to complete
     }
+}
 
 
         document.addEventListener('DOMContentLoaded', init);
